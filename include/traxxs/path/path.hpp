@@ -3,6 +3,8 @@
 
 #include "segment.hpp"
 
+namespace traxxs {
+namespace path {
 
 template < class Segment_t, class BlendSegment_t, class OrientationSegment_t, typename... Args >
 std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypoints( const PathBounds& path_bounds, const std::vector< CartesianPathConditions >& waypoints, Args... args ) {
@@ -27,7 +29,7 @@ std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypo
   }
   
   // now join all blend segments with Segment_t 
-  ArcConditions tmp;
+  arc::ArcConditions tmp;
   for ( unsigned int iblend = 0; iblend < blends.size(); ++iblend ) {
     std::shared_ptr < PathSegment > blend = blends[iblend];
     if ( iblend == 0 )
@@ -76,6 +78,9 @@ class Path
  protected: 
   std::vector< std::shared_ptr < PathSegment > > segments_;
 };
+
+} // namespace traxxs 
+} // namespace path 
 
 #endif // TRAXXS_PATH_PATH_H
 

@@ -3,8 +3,8 @@
 
 int main(void) {
   ArcTrajGenSoftMotion arcTrajGen;
-  ArcConditions c_i, c_f, c_max;
-  ArcConditions c_cur;
+  traxxs::arc::ArcConditions c_i, c_f, c_max;
+  traxxs::arc::ArcConditions c_cur;
   
   double dt = 0.1;
   

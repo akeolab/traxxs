@@ -3,8 +3,8 @@
 
 int main(void) {
   ArcTrajGenSCurve arcTrajGen;
-  ArcConditions c_i, c_f, c_max;
-  ArcConditions c_cur;
+  traxxs::arc::ArcConditions c_i, c_f, c_max;
+  traxxs::arc::ArcConditions c_cur;
   
   double dt = 0.001;
   
@@ -32,7 +32,7 @@ int main(void) {
   
   std::cout << "From " << c_i << "  to " << c_f << " s.t. " << c_max << std::endl;
   std::cout << "Duration : " << arcTrajGen.getDuration() << std::endl;
-  std::vector< ArcConditions > profile = arcTrajGen.getConditionsProfile();
+  std::vector< traxxs::arc::ArcConditions > profile = arcTrajGen.getConditionsProfile();
   for ( auto& c : profile ) {
     std::cout << c << std::endl;
   }

@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-bool toSoftMotion(const ArcConditions& c_in, SM_COND& c_out)
+bool toSoftMotion(const traxxs::arc::ArcConditions& c_in, SM_COND& c_out)
 {
   if ( std::isnan( c_in.s ) || std::isnan( c_in.ds ) || std::isnan( c_in.dds ) )
     return false;
@@ -12,7 +12,7 @@ bool toSoftMotion(const ArcConditions& c_in, SM_COND& c_out)
   return true;
 }
 
-bool toSoftMotion(const ArcConditions& c_in, SM_LIMITS& c_out)
+bool toSoftMotion(const traxxs::arc::ArcConditions& c_in, SM_LIMITS& c_out)
 {
   if ( std::isnan( c_in.ds ) || std::isnan( c_in.dds ) || std::isnan( c_in.j ) )
     return false;
@@ -22,7 +22,7 @@ bool toSoftMotion(const ArcConditions& c_in, SM_LIMITS& c_out)
   return true;
 }
 
-bool fromSoftMotion( const SM_COND& c_in, ArcConditions& c_out, double time /*= std::nan("")*/ )
+bool fromSoftMotion( const SM_COND& c_in, traxxs::arc::ArcConditions& c_out, double time /*= std::nan("")*/ )
 {
   c_out.s   = c_in.x;
   c_out.ds  = c_in.v;
@@ -57,7 +57,7 @@ bool ArcTrajGenSoftMotion::do_compute()
   return ret;
 }
 
-bool ArcTrajGenSoftMotion::do_compute_next_conditions( const ArcConditions& c_in, ArcConditions& c_out )
+bool ArcTrajGenSoftMotion::do_compute_next_conditions( const traxxs::arc::ArcConditions& c_in, traxxs::arc::ArcConditions& c_out )
 {
   if ( std::isnan( this->dt_ ) )
     return false; // without a period set, what is the "next" condition ?
@@ -79,7 +79,7 @@ bool ArcTrajGenSoftMotion::do_compute_next_conditions( const ArcConditions& c_in
   return true;
 }
 
-bool ArcTrajGenSoftMotion::do_get_conditions_at_time(double t, ArcConditions& c_out)
+bool ArcTrajGenSoftMotion::do_get_conditions_at_time(double t, traxxs::arc::ArcConditions& c_out)
 {
   /** \todo implement something to store the status of the computation (UNDEF, SUCCESS, FAILURE), preferably in ArcTrajGen */
   if ( std::isnan( this->getDuration() ) )

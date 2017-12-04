@@ -11,14 +11,16 @@
 template< class T >
 using sptr = std::shared_ptr<T>;
 
+using namespace traxxs;
+
 int main(void) {
   
   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
-  CartesianPathConditions pt_start, pt_wpt, pt_end;
+  path::CartesianPathConditions pt_start, pt_wpt, pt_end;
   
-  sptr< CartesianSegment< LinearSegment, SmoothStep7 > > seg_start, seg_end; 
-  sptr< CartesianSegment< CircularBlend, SmoothStep7 > > seg_blend;
+  sptr< path::CartesianSegment< path::LinearSegment, path::SmoothStep7 > > seg_start, seg_end; 
+  sptr< path::CartesianSegment< path::CircularBlend, path::SmoothStep7 > > seg_blend;
   
   pt_start.position.p  << 0, 0, 0;
   pt_wpt.position.p    << 1, 0, 0;
@@ -28,26 +30,26 @@ int main(void) {
   pt_wpt.position.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
   pt_end.position.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
   
-  PathBounds4d path_bounds;
+  path::PathBounds4d path_bounds;
   path_bounds.dx << 1.0, 1.0, 1.0, 0.1;
   path_bounds.ddx = 10.0 * path_bounds.dx;
   path_bounds.j = 10.0 * path_bounds.ddx;
   
-  std::vector< CartesianPathConditions > waypoints = { pt_start, pt_wpt, pt_end};
-  std::vector< sptr< PathSegment > > segments = blendedSegmentsFromCartesianWaypoints< LinearSegment, CircularBlend, SmoothStep7, double>( 
+  std::vector< path::CartesianPathConditions > waypoints = { pt_start, pt_wpt, pt_end};
+  std::vector< sptr< path::PathSegment > > segments = path::blendedSegmentsFromCartesianWaypoints< path::LinearSegment, path::CircularBlend, path::SmoothStep7, double>( 
    path_bounds, waypoints, 0.1 );
-  Path path( segments );
+  path::Path path( segments );
   
   path.init();
   
-  ArcConditions tmp;
+  arc::ArcConditions tmp;
   for ( auto& seg : segments ) {
     tmp.s = 0.0;
-    std::cout << "from:\t"  << Pose( seg->getPosition(tmp) ).p.transpose() << "\n\t" 
-                              << Pose( seg->getPosition(tmp) ).q.coeffs().transpose() <<  "\n" ;
+    std::cout << "from:\t"  << path::Pose( seg->getPosition(tmp) ).p.transpose() << "\n\t" 
+                              << path::Pose( seg->getPosition(tmp) ).q.coeffs().transpose() <<  "\n" ;
     tmp.s = seg->getLength();
-    std::cout << "to:\t"    << Pose( seg->getPosition(tmp) ).p.transpose() << "\n\t" 
-                              << Pose( seg->getPosition(tmp) ).q.coeffs().transpose() <<  "\n" ;
+    std::cout << "to:\t"    << path::Pose( seg->getPosition(tmp) ).p.transpose() << "\n\t" 
+                              << path::Pose( seg->getPosition(tmp) ).q.coeffs().transpose() <<  "\n" ;
   }
   
 }

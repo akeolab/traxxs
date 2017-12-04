@@ -1,24 +1,25 @@
-#include "traxxs/path/path.hpp"
+#include <traxxs/path/path.hpp>
+#include <traxxs/constants.hpp>
 
-Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
+traxxs::path::Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
     : segments_( segments )
 {
   
 }
 
-bool Path::init()
+bool traxxs::path::Path::init()
 {
   // first update the segments arc bounds and start/end arc conditions
   PathBounds path_bounds;
-  ArcConditions arc_bounds;
-  ArcConditions arc_cond_start, arc_cond_end;
+  arc::ArcConditions arc_bounds;
+  arc::ArcConditions arc_cond_start, arc_cond_end;
   for ( auto& seg : segments_ ) {
     path_bounds = seg->getPathBounds();
     arc_cond_start = seg->getStartArcConditions();
     arc_cond_end = seg->getEndArcConditions();
     
     bool is_line = true;
-    is_line = ( seg->getDerivativeCwiseAbsMax(2).norm() <= kZero ) && ( seg->getDerivativeCwiseAbsMax(3).norm() <= kZero );
+    is_line = ( seg->getDerivativeCwiseAbsMax(2).norm() <= constants::kZero ) && ( seg->getDerivativeCwiseAbsMax(3).norm() <= constants::kZero );
     // start by updating the arc bounds
     arc_bounds.ds = std::numeric_limits<double>::max();
     arc_bounds.dds = std::numeric_limits<double>::max();
@@ -28,7 +29,7 @@ bool Path::init()
       // if it is a line, we have f''(s) = 0, f'''(s) = 0
       // i.e. dq = f'.ds, ddq = f'.dds + 0, dddq = f'.ddds + 0 + 0
       for ( unsigned int dim = 0; dim < path_bounds.dx.size() ; ++dim ){
-        if ( seg->getDerivativeCwiseAbsMax( 1 )[dim] < kZero )
+        if ( seg->getDerivativeCwiseAbsMax( 1 )[dim] < constants::kZero )
           continue;
         arc_bounds.ds = std::fmin( arc_bounds.ds, path_bounds.dx[dim] / seg->getDerivativeCwiseAbsMax( 1 )[dim] );
         arc_bounds.dds = std::fmin( arc_bounds.dds, path_bounds.ddx[dim] / seg->getDerivativeCwiseAbsMax( 1 )[dim] );
@@ -49,18 +50,18 @@ bool Path::init()
       
       // first, handle the case dds = 0 && ddds = 0
       for ( unsigned int dim = 0; dim < path_bounds.dx.size() ; ++dim ){
-        if ( seg->getDerivativeCwiseAbsMax( 1 )[dim] >= kZero )
+        if ( seg->getDerivativeCwiseAbsMax( 1 )[dim] >= constants::kZero )
           arc_bounds.ds = std::fmin( arc_bounds.ds, path_bounds.dx[dim] / seg->getDerivativeCwiseAbsMax( 1 )[dim] );
-        if ( seg->getDerivativeCwiseAbsMax( 2 )[dim] >= kZero )
+        if ( seg->getDerivativeCwiseAbsMax( 2 )[dim] >= constants::kZero )
           arc_bounds.ds = std::fmin( arc_bounds.ds, std::sqrt( path_bounds.ddx[dim] / seg->getDerivativeCwiseAbsMax( 2 )[dim] ) );
-        if ( seg->getDerivativeCwiseAbsMax( 3 )[dim] >= kZero )
+        if ( seg->getDerivativeCwiseAbsMax( 3 )[dim] >= constants::kZero )
           arc_bounds.ds = std::fmin( arc_bounds.ds, std::sqrt( path_bounds.j[dim] / seg->getDerivativeCwiseAbsMax( 3 )[dim] ) );
       }
       
       double ds, dds, ddds;
       double fp, fpp, fppp;
       double dx, ddx, dddx;
-      if ( seg->getDerivativeCwiseAbsMax(1).norm() > kZero ) { 
+      if ( seg->getDerivativeCwiseAbsMax(1).norm() > constants::kZero ) { 
         
         /** \todo should we reset arc_bounds at this point ? */
         
@@ -68,9 +69,9 @@ bool Path::init()
           dx = path_bounds.dx[dim];
           ddx = path_bounds.ddx[dim];
           fp = seg->getDerivativeCwiseAbsMax( 1 )[dim];
-          if ( fp < kZero )  continue; // in this case, dds has no influence on acceleration, same for ds on velocity
+          if ( fp < constants::kZero )  continue; // in this case, dds has no influence on acceleration, same for ds on velocity
           fpp = seg->getDerivativeCwiseAbsMax( 2 )[dim];
-          if ( fpp < kZero ) {
+          if ( fpp < constants::kZero ) {
             // simple case, like a line (at least for vel and acc, not for jerk)
             ds = dx / fp;
             dds = ddx / fp;
@@ -88,7 +89,7 @@ bool Path::init()
              */
             ds = dds;
             
-            if ( fp * ds >= dx || dds <= kZero ) { // this solution does not work (dds <= 0 should not happen)
+            if ( fp * ds >= dx || dds <= constants::kZero ) { // this solution does not work (dds <= 0 should not happen)
               // the solution is to take the intersection of the acc and vel constraints
               ds = dx / fp;
               dds = ( ddx - fpp * ds*ds ) / fp;
@@ -104,7 +105,7 @@ bool Path::init()
         // we need to go further and comply with the jerk constraint
         for ( unsigned int dim = 0; dim < path_bounds.dx.size() ; ++dim ) {
           fp = seg->getDerivativeCwiseAbsMax( 1 )[dim];
-          if ( fp < kZero )  continue; // in this case, ddds has no influence on jerk
+          if ( fp < constants::kZero )  continue; // in this case, ddds has no influence on jerk
           fpp = seg->getDerivativeCwiseAbsMax( 2 )[dim];
           fppp = seg->getDerivativeCwiseAbsMax( 3 )[dim];
           ds = arc_bounds.ds;
@@ -114,7 +115,7 @@ bool Path::init()
           // it can happen that the ds and dds values chosen above are too large and yield ddds <= 0.
           // we need to pick other (compatible) values that will yield ddds > 0
           /** \hack this is relatively badly handled */
-          if ( ds > kZero ) {
+          if ( ds > constants::kZero ) {
             int N = 10; // this is arbitrary
             double ds_decr = ds * 1.0f / N;
             double k = dds / ds;
@@ -193,7 +194,7 @@ bool Path::init()
    * - ddds will be deduced from dddx continuity ( f'.ddds term in dddx)
    */
   std::shared_ptr < PathSegment > cur, prev;
-  ArcConditions arc_cond_end_prev;
+  arc::ArcConditions arc_cond_end_prev;
   Eigen::VectorXd fp, fpp, fppp;
   Eigen::VectorXd fp_prev, fpp_prev, fppp_prev;
   for ( unsigned int iseg = 0; iseg < this->segments_.size(); ++iseg ) {
@@ -212,9 +213,9 @@ bool Path::init()
       fpp   = cur->getDerivative( 2, 0.0 ); // f''(+)
       fppp  = cur->getDerivative( 3, 0.0 ); // f'''(+)
       // dx continuity
-      if ( std::fabs( arc_cond_start.ds ) < kZero || std::fabs( arc_cond_end_prev.ds ) < kZero  // if any of ds(-), ds(+) is null, 
+      if ( std::fabs( arc_cond_start.ds ) < constants::kZero || std::fabs( arc_cond_end_prev.ds ) < constants::kZero  // if any of ds(-), ds(+) is null, 
         || 
-        ( normalizedOrZero(fp) - normalizedOrZero(fp_prev) ).norm() > kZero // f' are not aligned
+        ( normalizedOrZero(fp) - normalizedOrZero(fp_prev) ).norm() > constants::kZero // f' are not aligned
       ) { 
         // only solution is dx = 0
         arc_cond_start.ds = 0.0;
@@ -227,12 +228,12 @@ bool Path::init()
       } else {
           double k = std::nan("");
           for ( unsigned int dim = 0; dim < fp.size() ; ++dim ) {
-            if ( std::fabs( fp[dim] ) < kZero )
+            if ( std::fabs( fp[dim] ) < constants::kZero )
               continue; // wait for non-null component
             k = fp_prev[dim] / fp[dim]; // k s.t. f'(-) = k.f'(+)
             break; // one is enough, since valid in all directions
           }
-          if ( std::isnan( k ) || std::fabs( k ) < kZero ) { // one of the tangents is null
+          if ( std::isnan( k ) || std::fabs( k ) < constants::kZero ) { // one of the tangents is null
             /** \todo check this */
             // fall back to dx = 0 continuity condition
             arc_cond_start.ds = 0.0;

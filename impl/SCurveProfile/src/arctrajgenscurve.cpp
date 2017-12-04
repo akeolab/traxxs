@@ -27,7 +27,7 @@ bool ArcTrajGenSCurve::do_compute()
   
   this->duration_ = this->scurve_profile_.t_vect_[this->scurve_profile_.t_vect_.size()-1];
   
-  ArcConditions c_tmp;
+  traxxs::arc::ArcConditions c_tmp;
   this->c_profile_.resize( this->scurve_profile_.t_vect_.size() ) ;
   for ( int i=0 ; i<this->scurve_profile_.t_vect_.size() ; i++ ) {
     c_tmp.s   = this->scurve_profile_.s_vect_[i];
@@ -40,7 +40,7 @@ bool ArcTrajGenSCurve::do_compute()
   return true;
 }
 
-bool ArcTrajGenSCurve::do_compute_next_conditions( const ArcConditions& c_in, ArcConditions& c_out )
+bool ArcTrajGenSCurve::do_compute_next_conditions( const traxxs::arc::ArcConditions& c_in, traxxs::arc::ArcConditions& c_out )
 {
   /** 
    * \fixme this is vastly suboptimal 
@@ -65,7 +65,7 @@ bool ArcTrajGenSCurve::do_compute_next_conditions( const ArcConditions& c_in, Ar
   return true;
 }
 
-bool ArcTrajGenSCurve::do_get_conditions_at_time(double t, ArcConditions& c_out)
+bool ArcTrajGenSCurve::do_get_conditions_at_time(double t, traxxs::arc::ArcConditions& c_out)
 {
   /**
    * \todo implement this. 

@@ -3,6 +3,9 @@
 
 #include <Eigen/Dense>
 
+namespace traxxs {
+namespace path {
+  
 struct Pose {
     Pose() {};
   /**
@@ -31,5 +34,8 @@ struct Pose {
   /** the orientation q */
   Eigen::Quaterniond  q;
 };
+
+} // namespace path
+} // namespace traxxs
 
 #endif // TRAXXS_PATH_DATA_H

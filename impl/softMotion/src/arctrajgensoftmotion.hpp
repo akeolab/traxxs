@@ -2,21 +2,21 @@
 #include <traxxs/arc/arc.hpp>
 #include <cmath>
 
-bool toSoftMotion( const ArcConditions& c_in, SM_COND& c_out );
-bool toSoftMotion( const ArcConditions& c_in, SM_LIMITS& c_out );
+bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_COND& c_out );
+bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_LIMITS& c_out );
 
-bool fromSoftMotion( const SM_COND& c_in, ArcConditions& c_out, double time = std::nan("") );
+bool fromSoftMotion( const SM_COND& c_in, traxxs::arc::ArcConditions& c_out, double time = std::nan("") );
 
 /**
  * \brief an ArcTrajGen implementation using softMotion
  */
-class ArcTrajGenSoftMotion : public ArcTrajGen 
+class ArcTrajGenSoftMotion : public traxxs::arc::ArcTrajGen 
 {
  protected: // the implementation
   virtual bool do_init() override;
   virtual bool do_compute() override;
-  virtual bool do_compute_next_conditions( const ArcConditions& c_in, ArcConditions& c_out ) override;
-  virtual bool do_get_conditions_at_time(double t, ArcConditions & c_out) override;
+  virtual bool do_compute_next_conditions( const traxxs::arc::ArcConditions& c_in, traxxs::arc::ArcConditions& c_out ) override;
+  virtual bool do_get_conditions_at_time(double t, traxxs::arc::ArcConditions & c_out) override;
   virtual double do_get_duration() override;
   
 protected: 

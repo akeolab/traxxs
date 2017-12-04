@@ -5,6 +5,8 @@
 #include <cmath>
 #include <iostream>
 
+namespace traxxs {
+namespace arc {
 /** 
  * \brief 1-D trajectory conditions 
  * Members are s, ds, dds, j, t defaulting to nan
@@ -88,5 +90,7 @@ protected:
   double dt_ = std::nan("");
 };
 
+} // namespace arc
+} // namespace traxxs
 
 #endif // TRAXXS_ARCTRAJGEN_H

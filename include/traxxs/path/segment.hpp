@@ -9,12 +9,15 @@
 
 #include "data.hpp"
 #include <traxxs/arc/arc.hpp>
+#include <traxxs/constants.hpp>
+
+namespace traxxs {
+namespace path {
 
 static const unsigned int kNCinf = std::numeric_limits<unsigned int>::max();
-static const double kZero = 1.e-12;
 
 /** \brief returns the normalized vector, or a zero-vector if the norm of the vector is inferior to tolerance */
-Eigen::VectorXd normalizedOrZero( const Eigen::VectorXd& vec, double norm_tolerance = kZero );
+Eigen::VectorXd normalizedOrZero( const Eigen::VectorXd& vec, double norm_tolerance = traxxs::constants::kZero );
 
 /** \brief stacks two vectors */
 Eigen::VectorXd stack( const Eigen::VectorXd& vec_top, const Eigen::VectorXd& vec_bottom );
@@ -40,15 +43,15 @@ struct PathConditions
   Eigen::VectorXd ddx;
   /** \todo jerk ? */
  
-  ArcConditions getArcConditions() const { return this->arc_conditions_; }
-  bool setArcConditions( const ArcConditions& arc_conditions ) { this->arc_conditions_ = arc_conditions; return true; }
+  arc::ArcConditions getArcConditions() const { return this->arc_conditions_; }
+  bool setArcConditions( const arc::ArcConditions& arc_conditions ) { this->arc_conditions_ = arc_conditions; return true; }
   
  protected:
   /** 
    * \brief the desired conditions on the arc, if supported by the generator. Will be updated w.r.t. bounds on the segment.
    * \note arcConditions.s will not be used
    */
-  ArcConditions arc_conditions_;
+  arc::ArcConditions arc_conditions_;
 };
 
 struct CartesianPathConditions
@@ -141,17 +144,17 @@ class PathSegment
   
   virtual bool init(); 
    
-  virtual Eigen::VectorXd getPosition( const ArcConditions& arc_conditions ) const {
+  virtual Eigen::VectorXd getPosition( const arc::ArcConditions& arc_conditions ) const {
     return this->getConfiguration( arc_conditions.s );
   }
-  virtual Eigen::VectorXd getVelocity( const ArcConditions& arc_conditions ) const {
+  virtual Eigen::VectorXd getVelocity( const arc::ArcConditions& arc_conditions ) const {
     return arc_conditions.ds * this->getDerivative( 1, arc_conditions.s );
   }
-  virtual Eigen::VectorXd getAcceleration( const ArcConditions& arc_conditions ) const {
+  virtual Eigen::VectorXd getAcceleration( const arc::ArcConditions& arc_conditions ) const {
     return arc_conditions.dds * this->getDerivative( 1, arc_conditions.s )
             + arc_conditions.ds*arc_conditions.ds * this->getDerivative( 2, arc_conditions.s );
   }
-  virtual Eigen::VectorXd getJerk( const ArcConditions& arc_conditions ) const {
+  virtual Eigen::VectorXd getJerk( const arc::ArcConditions& arc_conditions ) const {
     return arc_conditions.j * this->getDerivative( 1, arc_conditions.s )
             + 3.0 * arc_conditions.dds*arc_conditions.ds * this->getDerivative( 2, arc_conditions.s )
             + arc_conditions.ds*arc_conditions.ds*arc_conditions.ds * this->getDerivative( 3, arc_conditions.s );
@@ -159,14 +162,14 @@ class PathSegment
   
   
  public: // getters and setters
-  virtual ArcConditions getStartArcConditions() const { return this->cond_start_.getArcConditions(); }
-  virtual ArcConditions getEndArcConditions() const { return this->cond_end_.getArcConditions(); }
+  virtual arc::ArcConditions getStartArcConditions() const { return this->cond_start_.getArcConditions(); }
+  virtual arc::ArcConditions getEndArcConditions() const { return this->cond_end_.getArcConditions(); }
   virtual PathBounds getPathBounds() const { return this->path_bounds_; }
-  virtual ArcConditions getArcBounds() const { return this->arc_bounds_; }
+  virtual arc::ArcConditions getArcBounds() const { return this->arc_bounds_; }
   
-  virtual bool setStartArcConditions( const ArcConditions& start_arc_conditions ) { return this->cond_start_.setArcConditions( start_arc_conditions ); }
-  virtual bool setEndArcConditions( const ArcConditions& end_arc_conditions ) { return this->cond_end_.setArcConditions( end_arc_conditions ); }
-  virtual bool setArcBounds( const ArcConditions& arc_bounds ) { this->arc_bounds_ = arc_bounds; return true; }
+  virtual bool setStartArcConditions( const arc::ArcConditions& start_arc_conditions ) { return this->cond_start_.setArcConditions( start_arc_conditions ); }
+  virtual bool setEndArcConditions( const arc::ArcConditions& end_arc_conditions ) { return this->cond_end_.setArcConditions( end_arc_conditions ); }
+  virtual bool setArcBounds( const arc::ArcConditions& arc_bounds ) { this->arc_bounds_ = arc_bounds; return true; }
  
  protected: // the virtual implementation
   /** \brief implementation of getLength() */
@@ -182,7 +185,7 @@ class PathSegment
   /** \warning adding members here should be reverberated to StackedSegments */
   PathConditions cond_start_, cond_end_;
   PathBounds path_bounds_ ;
-  ArcConditions arc_bounds_;
+  arc::ArcConditions arc_bounds_;
   double length_ = std::nan("");
   
  protected:
@@ -344,10 +347,10 @@ class CartesianSegmentBase : public StackedSegments
   virtual bool init() override;
                         
  public: // the interface implementation
-  virtual Eigen::VectorXd getPosition( const ArcConditions& arc_conditions ) const override;
-  virtual Eigen::VectorXd getVelocity( const ArcConditions& arc_conditions ) const override;
-  virtual Eigen::VectorXd getAcceleration( const ArcConditions& arc_conditions ) const override;
-  virtual Eigen::VectorXd getJerk( const ArcConditions& arc_conditions ) const override;
+  virtual Eigen::VectorXd getPosition( const arc::ArcConditions& arc_conditions ) const override;
+  virtual Eigen::VectorXd getVelocity( const arc::ArcConditions& arc_conditions ) const override;
+  virtual Eigen::VectorXd getAcceleration( const arc::ArcConditions& arc_conditions ) const override;
+  virtual Eigen::VectorXd getJerk( const arc::ArcConditions& arc_conditions ) const override;
   
  protected:
   std::shared_ptr< PathSegment > segment_pos_;
@@ -459,5 +462,7 @@ class CartesianSegment : public CartesianSegmentBase
    
 };
 
+} // namespace traxxs 
+} // namespace path 
 
 #endif // TRAXXS_PATH_SEGMENT_H

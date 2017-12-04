@@ -12,6 +12,8 @@
 template< class T >
 using sptr = std::shared_ptr<T>;
 
+using namespace traxxs::constants;
+
 int main(void) {
   
   bool ret_cont_pos = true;
@@ -21,9 +23,9 @@ int main(void) {
   
   int ret_count_dx_nonnull = 0;
   
-  sptr< PathSegment > seg_start, seg_1_blend, seg_2, seg_3, seg_end;
+  sptr< traxxs::path::PathSegment > seg_start, seg_1_blend, seg_2, seg_3, seg_end;
   
-  PathConditions wpt_start, wpt_1, wpt_2, wpt_3, wpt_end, wpt_blend_s, wpt_blend_e;
+  traxxs::path::PathConditions wpt_start, wpt_1, wpt_2, wpt_3, wpt_end, wpt_blend_s, wpt_blend_e;
   wpt_start.x = Eigen::Vector2d();
   wpt_1.x = Eigen::Vector2d();
   wpt_2.x = Eigen::Vector2d();
@@ -36,14 +38,14 @@ int main(void) {
   wpt_3.x      << .5, 1 ;
   wpt_end.x    << 0, 1 ;
   
-  PathBounds path_bounds;
+  traxxs::path::PathBounds path_bounds;
   Eigen::Vector2d ones = Eigen::VectorXd::Ones(2);
   path_bounds.dx  = 1 * ones;
   path_bounds.ddx = 10 * ones;
   path_bounds.j   = 100 * ones;
   
   // first the blend, so that we can use the start and end of the blend
-  seg_1_blend = std::make_shared< CircularBlend >( wpt_start, wpt_2, path_bounds,  wpt_1.x, 0.1 );
+  seg_1_blend = std::make_shared< traxxs::path::CircularBlend >( wpt_start, wpt_2, path_bounds,  wpt_1.x, 0.1 );
   
   
   seg_1_blend->init();
@@ -53,22 +55,22 @@ int main(void) {
   std::cout<< wpt_blend_s.x.transpose() << std::endl;
   std::cout<< wpt_blend_e.x.transpose() << std::endl;
   
-  seg_start = std::make_shared< LinearSegment >( wpt_start, wpt_blend_s, path_bounds );
+  seg_start = std::make_shared< traxxs::path::LinearSegment >( wpt_start, wpt_blend_s, path_bounds );
   // seg_1_blend = 
-  seg_2 = std::make_shared< LinearSegment >( wpt_blend_e, wpt_2, path_bounds );
-  seg_3 = std::make_shared< LinearSegment >( wpt_2, wpt_3, path_bounds );
-  seg_end = std::make_shared< LinearSegment >( wpt_3, wpt_end, path_bounds );
+  seg_2 = std::make_shared< traxxs::path::LinearSegment >( wpt_blend_e, wpt_2, path_bounds );
+  seg_3 = std::make_shared< traxxs::path::LinearSegment >( wpt_2, wpt_3, path_bounds );
+  seg_end = std::make_shared< traxxs::path::LinearSegment >( wpt_3, wpt_end, path_bounds );
   
-  std::vector< sptr< PathSegment > > segments{ seg_start, seg_1_blend, seg_2, seg_3, seg_end };
+  std::vector< sptr< traxxs::path::PathSegment > > segments{ seg_start, seg_1_blend, seg_2, seg_3, seg_end };
   for( auto& seg : segments )
     seg->init();
-  Path path( segments );
+  traxxs::path::Path path( segments );
   path.init();
   
   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
-  sptr< PathSegment > cur, prev;
+  sptr< traxxs::path::PathSegment > cur, prev;
   Eigen::VectorXd x_m, x_p, dx_m, dx_p, ddx_m, ddx_p, j_m, j_p;
-  ArcConditions conds_m, conds_p;
+  traxxs::arc::ArcConditions conds_m, conds_p;
   
   // check continuity
   for ( unsigned int iseg=1; iseg<segments.size(); ++iseg ) {
@@ -109,7 +111,7 @@ int main(void) {
   
   // check bounds
   std::cout << "------- Checking bounds " << std::endl;
-  ArcConditions arc_bounds;
+  traxxs::arc::ArcConditions arc_bounds;
   Eigen::VectorXd fp, fpp, fppp;
   Eigen::VectorXd dx, ddx, dddx;
   for ( const auto& seg : segments ) {
