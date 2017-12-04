@@ -14,6 +14,6 @@ target_include_directories( arctrajgensoftmotion PUBLIC
 
 
 target_link_libraries( arctrajgensoftmotion PUBLIC
-  arctrajgen
+  traxxs
   softMotion
 )

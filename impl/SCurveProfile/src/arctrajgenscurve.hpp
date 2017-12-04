@@ -1,5 +1,5 @@
 #include <SCurveProfile.hpp>
-#include "arctrajgen/arctrajgen.hpp"
+#include <traxxs/arc/arc.hpp>
 #include <cmath>
 
 /**

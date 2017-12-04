@@ -1,5 +1,5 @@
 #include <softMotion.h>
-#include "arctrajgen/arctrajgen.hpp"
+#include <traxxs/arc/arc.hpp>
 #include <cmath>
 
 bool toSoftMotion( const ArcConditions& c_in, SM_COND& c_out );

@@ -1,5 +1,5 @@
-#ifndef TRAJGEN_PATH_SEGMENT_H
-#define TRAJGEN_PATH_SEGMENT_H
+#ifndef TRAXXS_PATH_SEGMENT_H
+#define TRAXXS_PATH_SEGMENT_H
 
 #include <limits>
 #include <list>
@@ -7,8 +7,8 @@
 
 #include <Eigen/Dense>
 
-#include <path/data.hpp>
-#include <arctrajgen/arctrajgen.hpp>
+#include "data.hpp"
+#include <traxxs/arc/arc.hpp>
 
 static const unsigned int kNCinf = std::numeric_limits<unsigned int>::max();
 static const double kZero = 1.e-12;
@@ -460,4 +460,4 @@ class CartesianSegment : public CartesianSegmentBase
 };
 
 
-#endif // TRAJGEN_PATH_SEGMENT_H
+#endif // TRAXXS_PATH_SEGMENT_H

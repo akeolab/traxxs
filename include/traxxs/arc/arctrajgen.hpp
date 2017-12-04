@@ -1,5 +1,5 @@
-#ifndef TRAJGEN_ARCTRAJGEN_H
-#define TRAJGEN_ARCTRAJGEN_H
+#ifndef TRAXXS_ARCTRAJGEN_H
+#define TRAXXS_ARCTRAJGEN_H
 
 #include <vector>
 #include <cmath>
@@ -89,4 +89,4 @@ protected:
 };
 
 
-#endif // TRAJGEN_ARCTRAJGEN_H
+#endif // TRAXXS_ARCTRAJGEN_H

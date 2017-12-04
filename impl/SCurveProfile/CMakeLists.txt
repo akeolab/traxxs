@@ -14,6 +14,6 @@ target_include_directories( arctrajgenscurve PUBLIC
 
 
 target_link_libraries( arctrajgenscurve PUBLIC
-  arctrajgen
+  traxxs
   SCurveProfile
 )

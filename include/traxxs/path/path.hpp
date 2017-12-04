@@ -1,7 +1,7 @@
-#ifndef TRAJGEN_PATH_PATH_H
-#define TRAJGEN_PATH_PATH_H
+#ifndef TRAXXS_PATH_PATH_H
+#define TRAXXS_PATH_PATH_H
 
-#include "path/segment.hpp"
+#include "segment.hpp"
 
 
 template < class Segment_t, class BlendSegment_t, class OrientationSegment_t, typename... Args >
@@ -77,5 +77,5 @@ class Path
   std::vector< std::shared_ptr < PathSegment > > segments_;
 };
 
-#endif // TRAJGEN_PATH_PATH_H
+#endif // TRAXXS_PATH_PATH_H
 

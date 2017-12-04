@@ -1,4 +1,4 @@
-#include "arctrajgen/arctrajgen.hpp"
+#include "traxxs/arc/arc.hpp"
 
 std::ostream& operator<<(std::ostream& os, const ArcConditions& obj) 
 {

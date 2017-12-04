@@ -7,8 +7,7 @@
 #include <iomanip>
 #include <memory>
 
-#include <path/path.hpp>
-#include <path/segment.hpp>
+#include <traxxs/path/path.hpp>
 
 template< class T >
 using sptr = std::shared_ptr<T>;

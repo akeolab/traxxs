@@ -1,4 +1,4 @@
-#include "path/segment.hpp"
+#include "traxxs/path/segment.hpp"
 
 Eigen::VectorXd normalizedOrZero( const Eigen::VectorXd& vec, double norm_tolerance /*= kZero*/ )
 {

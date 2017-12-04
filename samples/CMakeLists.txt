@@ -18,10 +18,10 @@ add_executable( sample_arctrajgen_softmotion sample_arctrajgen_softmotion.cpp )
 target_link_libraries(sample_arctrajgen_softmotion arctrajgensoftmotion)
 
 add_executable( sample_path sample_path.cpp )
-target_link_libraries(sample_path path)
+target_link_libraries(sample_path traxxs)
 
 add_executable( sample_path_stack sample_path_stack.cpp )
-target_link_libraries(sample_path_stack path)
+target_link_libraries(sample_path_stack traxxs)
 
 add_executable( sample_path_cart sample_path_cart.cpp )
-target_link_libraries(sample_path_cart path)
+target_link_libraries(sample_path_cart traxxs)

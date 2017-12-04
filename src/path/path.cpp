@@ -1,4 +1,4 @@
-#include "path/path.hpp"
+#include "traxxs/path/path.hpp"
 
 Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
     : segments_( segments )

@@ -1,5 +1,5 @@
-#ifndef TRAJGEN_PATH_DATA_H
-#define TRAJGEN_PATH_DATA_H
+#ifndef TRAXXS_PATH_DATA_H
+#define TRAXXS_PATH_DATA_H
 
 #include <Eigen/Dense>
 
@@ -32,4 +32,4 @@ struct Pose {
   Eigen::Quaterniond  q;
 };
 
-#endif // TRAJGEN_PATH_DATA_H
+#endif // TRAXXS_PATH_DATA_H
