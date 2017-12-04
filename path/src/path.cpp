@@ -3,6 +3,11 @@
 Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
     : segments_( segments )
 {
+  
+}
+
+bool Path::init()
+{
   // first update the segments arc bounds and start/end arc conditions
   PathBounds path_bounds;
   ArcConditions arc_bounds;
@@ -18,7 +23,6 @@ Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
     arc_bounds.ds = std::numeric_limits<double>::max();
     arc_bounds.dds = std::numeric_limits<double>::max();
     arc_bounds.j = std::numeric_limits<double>::max();
-    
     
     if ( is_line ) {
       // if it is a line, we have f''(s) = 0, f'''(s) = 0
@@ -137,31 +141,31 @@ Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
     
     // then the start/end arc conditions. If defined by the user conform to the bounds, otherwise set to max for fastest travel
     // start conditions
-    if ( !isnan( arc_cond_start.ds ) )  
+    if ( std::isnan( arc_cond_start.ds ) )  
       arc_cond_start.ds = arc_bounds.ds;
     else                                
-      arc_cond_start.ds = std::fmin( arc_cond_start.ds, arc_bounds.ds );
-    if ( !isnan( arc_cond_start.dds ) ) 
+      arc_cond_start.ds = ( (arc_cond_start.ds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_start.ds), arc_bounds.ds );
+    if ( std::isnan( arc_cond_start.dds ) ) 
       arc_cond_start.dds = arc_bounds.dds;
     else                                
-      arc_cond_start.dds = std::fmin( arc_cond_start.dds, arc_bounds.dds );
-    if ( !isnan( arc_cond_start.j ) )   
+      arc_cond_start.dds = ( (arc_cond_start.dds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_start.dds), arc_bounds.dds );
+    if ( std::isnan( arc_cond_start.j ) )   
       arc_cond_start.j = arc_bounds.j;
     else                                
-      arc_cond_start.j = std::fmin( arc_cond_start.j, arc_bounds.j );
+      arc_cond_start.j = ( (arc_cond_start.j > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_start.j), arc_bounds.j );
     // end conditions
-    if ( !isnan( arc_cond_end.ds ) )    
+    if ( std::isnan( arc_cond_end.ds ) )    
       arc_cond_end.ds = arc_bounds.ds;
     else                                
-      arc_cond_end.ds = std::fmin( arc_cond_end.ds, arc_bounds.ds );
-    if ( !isnan( arc_cond_end.dds ) )   
+      arc_cond_end.ds = ( (arc_cond_end.ds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_end.ds), arc_bounds.ds );
+    if ( std::isnan( arc_cond_end.dds ) )   
       arc_cond_end.dds = arc_bounds.dds;
     else                                
-      arc_cond_end.dds = std::fmin( arc_cond_end.dds, arc_bounds.dds );
-    if ( !isnan( arc_cond_end.j ) )     
+      arc_cond_end.dds = ( (arc_cond_end.dds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_end.dds), arc_bounds.dds );
+    if ( std::isnan( arc_cond_end.j ) )     
       arc_cond_end.j = arc_bounds.j;
     else                                
-      arc_cond_end.j = std::fmin( arc_cond_end.j, arc_bounds.j );
+      arc_cond_end.j = ( (arc_cond_end.j > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_end.j), arc_bounds.j );
     
     
     seg->setArcBounds( arc_bounds );
@@ -271,3 +275,4 @@ Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
     cur->setStartArcConditions( arc_cond_start );
   }
 }
+

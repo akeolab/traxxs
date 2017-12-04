@@ -3,13 +3,13 @@
 
 #include <Eigen/Dense>
 
-struct CartesianPoint {
-  CartesianPoint() {};
+struct Pose {
+    Pose() {};
   /**
    * \warning will throw std::invalid_argument if the input vector is not of size 7
    * \param[in] rep_7d The 7D representation of the cartesian point [x, y, z, qx, qy, qz, qw]
    */
-  CartesianPoint( const Eigen::VectorXd &rep_7d ) {
+    Pose( const Eigen::VectorXd &rep_7d ) {
     if ( rep_7d.size() != 7 )
       throw std::invalid_argument( "Input Waypoints should be of size 7 [x, y, z, qx, qy, qz, qw]" );
     this->p = rep_7d.segment( 0, 3 );

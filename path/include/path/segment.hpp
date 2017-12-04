@@ -30,23 +30,41 @@ struct sink { template<typename ...Args> sink(Args const & ... ) {} };
  */
 struct PathConditions 
 {
-  Eigen::VectorXd position;
+  PathConditions( unsigned int sz = 0 ) {
+    this->x.setConstant(   sz, std::nan("") );
+    this->dx.setConstant(  sz, std::nan("") );
+    this->ddx.setConstant( sz, std::nan("") );
+  }
+  Eigen::VectorXd x;
+  Eigen::VectorXd dx;
+  Eigen::VectorXd ddx;
+  /** \todo jerk ? */
+ 
+  ArcConditions getArcConditions() const { return this->arc_conditions_; }
+  bool setArcConditions( const ArcConditions& arc_conditions ) { this->arc_conditions_ = arc_conditions; return true; }
+  
+ protected:
   /** 
    * \brief the desired conditions on the arc, if supported by the generator. Will be updated w.r.t. bounds on the segment.
    * \note arcConditions.s will not be used
    */
-  ArcConditions arcConditions;
+  ArcConditions arc_conditions_;
 };
 
 struct CartesianPathConditions
 {
-  CartesianPoint position;
-  ArcConditions arcConditionsPosition;
-  ArcConditions arcConditionsOrientation;
+    Pose position;
+  PathConditions pathConditionsPosition = PathConditions( 3 );
+  PathConditions pathConditionsOrientation = PathConditions( 1 );
 };
 
 struct PathBounds
 {
+  PathBounds( unsigned int sz = 0 ) {
+    this->dx.setConstant(   sz, std::nan("") );
+    this->ddx.setConstant(  sz, std::nan("") );
+    this->j.setConstant(    sz, std::nan("") );
+  }
   Eigen::VectorXd dx;
   Eigen::VectorXd ddx;
   Eigen::VectorXd j;
@@ -54,29 +72,17 @@ struct PathBounds
 
 struct PathBounds1d : PathBounds
 {
-  PathBounds1d() {
-    dx = Eigen::Matrix<double, 1, 1>();
-    ddx = Eigen::Matrix<double, 1, 1>();
-    j = Eigen::Matrix<double, 1, 1>();
-  }
+  PathBounds1d() : PathBounds( 1 ) {}
 };
 
 struct PathBounds3d : PathBounds
 {
-  PathBounds3d() {
-    dx = Eigen::Vector3d();
-    ddx = Eigen::Vector3d();
-    j = Eigen::Vector3d();
-  }
+  PathBounds3d() : PathBounds( 3 ) {}
 };
 
 struct PathBounds4d : PathBounds
 {
-  PathBounds4d() {
-    dx = Eigen::Vector4d();
-    ddx = Eigen::Vector4d();
-    j = Eigen::Vector4d();
-  }
+  PathBounds4d() : PathBounds( 4 ) {}
 };
 
 
@@ -87,21 +93,24 @@ class PathSegment
   /** \brief default constructor */
   PathSegment(){}
   /**
-   * \param[in] start   the start conditions, with a position and optionally desired arc velocity, acceleration, jerk
-   * \param[in] end     the end conditions, with a position and optionally desired arc velocity, acceleration, jerk
+   * \param[in] start   the start conditions, with a position and optionally desired path velocity, acceleration, jerk
+   * \param[in] end     the end conditions, with a position and optionally desired path velocity, acceleration, jerk
    * \param[in] bounds  the arc desired bounds (effective bounds may be changed later)
+   * 
+   * \note for start/end conditions, the arc conditions will be computed automatically by the segment based on desired path vel/acc/jerk
    */
-  PathSegment( const PathConditions& start, const PathConditions& end, const PathBounds& bounds ) 
-      : cond_start_( start ), cond_end_ ( end ), path_bounds_( bounds ) {
+  PathSegment( const PathConditions& start, const PathConditions& end, const PathBounds& bounds ) {
+    this->set( start, end, bounds );
   }
   
   template< typename... Args >
-  PathSegment( const PathConditions& start, const PathConditions& end, const PathBounds& bounds, Args... args ) 
+  PathSegment( const PathConditions& start, const PathConditions& end, const PathBounds& bounds, Args... args )
       : PathSegment( start, end, bounds ) {
-        sink{ args ... };
+    sink{ args ... };
   }
   
  public: // the non-virtual public interface
+  
   /** \brief returns the total arc length of the segment */ 
   virtual double getLength() const final { return this->do_get_length(); }
    
@@ -125,6 +134,13 @@ class PathSegment
   virtual Eigen::VectorXd getDerivativeCwiseAbsMax( unsigned int order ) const final { return this->do_get_derivative_cwise_abs_max( order ) ; }
   
  public: // the virtual public interface
+  virtual bool set( const PathConditions& start, const PathConditions& end, const PathBounds& bounds ) {
+    cond_start_ = start, cond_end_ = end, path_bounds_ = bounds; 
+    i_cond_start_ = start, i_cond_end_ = end, i_path_bounds_ = bounds;
+  }
+  
+  virtual bool init(); 
+   
   virtual Eigen::VectorXd getPosition( const ArcConditions& arc_conditions ) const {
     return this->getConfiguration( arc_conditions.s );
   }
@@ -143,13 +159,13 @@ class PathSegment
   
   
  public: // getters and setters
-  virtual ArcConditions getStartArcConditions() const { return this->cond_start_.arcConditions; }
-  virtual ArcConditions getEndArcConditions() const { return this->cond_end_.arcConditions; }
+  virtual ArcConditions getStartArcConditions() const { return this->cond_start_.getArcConditions(); }
+  virtual ArcConditions getEndArcConditions() const { return this->cond_end_.getArcConditions(); }
   virtual PathBounds getPathBounds() const { return this->path_bounds_; }
   virtual ArcConditions getArcBounds() const { return this->arc_bounds_; }
   
-  virtual bool setStartArcConditions( const ArcConditions& start_arc_conditions ) { this->cond_start_.arcConditions = start_arc_conditions; return true; }
-  virtual bool setEndArcConditions( const ArcConditions& end_arc_conditions ) { this->cond_end_.arcConditions = end_arc_conditions; return true; }
+  virtual bool setStartArcConditions( const ArcConditions& start_arc_conditions ) { return this->cond_start_.setArcConditions( start_arc_conditions ); }
+  virtual bool setEndArcConditions( const ArcConditions& end_arc_conditions ) { return this->cond_end_.setArcConditions( end_arc_conditions ); }
   virtual bool setArcBounds( const ArcConditions& arc_bounds ) { this->arc_bounds_ = arc_bounds; return true; }
  
  protected: // the virtual implementation
@@ -168,6 +184,10 @@ class PathSegment
   PathBounds path_bounds_ ;
   ArcConditions arc_bounds_;
   double length_ = std::nan("");
+  
+ protected:
+  PathConditions i_cond_start_, i_cond_end_; 
+  PathBounds i_path_bounds_;
 };
 
 /**
@@ -183,12 +203,15 @@ class BlendSegment : public PathSegment
    */
   BlendSegment(  const PathConditions& start, const PathConditions& end, const PathBounds& bounds, 
                  const Eigen::VectorXd& waypoint,
-                 Args... args) 
-      : PathSegment( start, end, bounds ) {
-        // avoid unused argument warning
-        (void) waypoint;
-        sink{ args ... };
-      }
+                 Args... args ) 
+      : PathSegment( start, end, bounds ){
+    (void) waypoint;
+    sink{ args ... };
+  }
+ public: 
+  virtual bool init() override {
+    return ( true && PathSegment::init() );
+  }
 };
 
 /** 
@@ -205,8 +228,11 @@ class StackedSegments : public PathSegment
   StackedSegments( const std::vector< std::shared_ptr< PathSegment > >& segments );
   StackedSegments( std::shared_ptr< PathSegment >& segment_top, std::shared_ptr< PathSegment >& segment_bottom );
  
- protected:
-  virtual bool init_stack( const std::vector< std::shared_ptr< PathSegment > >& segments ) final;
+ public:
+  void setSegments( const std::vector< std::shared_ptr< PathSegment > >& segments ) { this->segments_ = segments; }
+  
+ public:
+  virtual bool init() override;
   
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
@@ -221,6 +247,9 @@ class LinearSegment : public PathSegment
 {
  public:
   LinearSegment( const PathConditions& start, const PathConditions& end, const PathBounds& bounds );
+  
+ public:
+  virtual bool init() override;
   
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
@@ -239,6 +268,9 @@ class SmoothStep7 : public PathSegment
 {
  public:
   SmoothStep7( const PathConditions& start, const PathConditions& end, const PathBounds& bounds );
+  
+ public:
+  virtual bool init() override;
   
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
@@ -271,6 +303,9 @@ class CircularBlend : public BlendSegment< double >
                  const Eigen::VectorXd& waypoint, 
                  double maxDeviation);
   
+ public:
+  virtual bool init() override;
+  
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
   virtual Eigen::VectorXd do_get_derivative_cwise_abs_max( unsigned int order ) const override;
@@ -285,6 +320,10 @@ class CircularBlend : public BlendSegment< double >
   Eigen::VectorXd center_;  // the center of the circle
   Eigen::VectorXd x_, y_;   // main axes
   double radius_; // the radius of the circle
+  
+ private:
+   Eigen::VectorXd i_waypoint_;
+   double i_max_deviation_;
 };
 
 
@@ -298,10 +337,11 @@ class CartesianSegmentBase : public StackedSegments
   * \warning all derived classes should call init_cartesianbase() in their constructor
   */
   CartesianSegmentBase( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
-                        const CartesianPoint& start, const CartesianPoint& end );
- protected:
-  virtual bool init_cartesianbase( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
-                        const CartesianPoint& start, const CartesianPoint& end ) final ;
+                        const Pose& start, const Pose& end );
+ public:
+  virtual bool set( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
+                        const Pose& start, const Pose& end );
+  virtual bool init() override;
                         
  public: // the interface implementation
   virtual Eigen::VectorXd getPosition( const ArcConditions& arc_conditions ) const override;
@@ -312,8 +352,11 @@ class CartesianSegmentBase : public StackedSegments
  protected:
   std::shared_ptr< PathSegment > segment_pos_;
   std::shared_ptr< PathSegment >  segment_or_;
-  CartesianPoint cart_start_, cart_end_;
-  Eigen::AngleAxisd or_trans_; // the transformation from start.q to end.q
+  /** \brief the start point of the cartesian segment */
+    Pose cart_start_;
+  /** \brief the end point of the cartesian segment */
+    Pose cart_end_;
+  Eigen::AngleAxisd or_trans_; // the transformation from cart_start_.q to cart_end_.q
 };
 
 template< class PosSegment_t, class OrSegment_t >
@@ -326,26 +369,36 @@ class CartesianSegment : public CartesianSegmentBase
   template< typename... Args >
   CartesianSegment( const CartesianPathConditions& start, const CartesianPathConditions& end, const PathBounds& path_bounds, Args... pos_segment_args )
       : start_( start ), end_(end), bounds_( path_bounds ) {
-    // first build the segments for position and orientation
-    this->init_cartesian_pre();
-    this->segment_pos_ = std::make_shared< PosSegment_t >( pos_start, pos_end, pos_bounds, pos_segment_args... );
-    this->segment_or_ = std::make_shared< OrSegment_t >( or_start, or_end, or_bounds  );
-    this->init_cartesian_post();
-    
-    // now do the rest of the setup
-    this->init_cartesianbase( this->segment_pos_, this->segment_or_, start_.position, end_.position );
+    this->segment_pos_ = std::make_shared< PosSegment_t >( PathConditions(), PathConditions(), PathBounds(), pos_segment_args... );
+    this->segment_or_ = std::make_shared< OrSegment_t >( PathConditions(), PathConditions(), PathBounds() );
   }
   
   CartesianSegment( const CartesianPathConditions& start, const CartesianPathConditions& end, const PathBounds& path_bounds ) 
       : start_( start ), end_(end), bounds_( path_bounds ) {        
+    this->segment_pos_ = std::make_shared< PosSegment_t >( PathConditions(), PathConditions(), PathBounds() );
+    this->segment_or_ = std::make_shared< OrSegment_t >( PathConditions(), PathConditions(), PathBounds() );
+  }
+  
+ public:
+  virtual bool init() override {
+    bool ret = true;
+    
     // first build the segments for position and orientation
-    this->init_cartesian_pre();
-    this->segment_pos_ = std::make_shared< PosSegment_t >( pos_start, pos_end, pos_bounds );
-    this->segment_or_ = std::make_shared< OrSegment_t >( or_start, or_end, or_bounds  );
-    this->init_cartesian_post();
+    ret &= this->init_cartesian_pre();
+    
+    this->segment_pos_->set( pos_start, pos_end, pos_bounds ) ;
+    this->segment_or_->set( or_start, or_end, or_bounds ) ;
+    
+    // init the segments ! Important, otherwise we cannot get their start/end configurations
+    ret &= this->segment_pos_->init();
+    ret &= this->segment_or_->init();
+    
+    ret &= this->init_cartesian_post();
     
     // now do the rest of the setup
-    this->init_cartesianbase( this->segment_pos_, this->segment_or_, start_.position, end_.position );
+    ret &= CartesianSegmentBase::set( segment_pos_, segment_or_, start_.position, end_.position );
+    ret &= CartesianSegmentBase::init();
+    return ret;
   }
   
  protected:
@@ -355,21 +408,18 @@ class CartesianSegment : public CartesianSegmentBase
     if ( bounds_.dx.size() != 4 || bounds_.ddx.size() != 4 || bounds_.j.size() != 4 )
       throw std::invalid_argument( "Bounds in CartesianSegment should be of size 4." );
     // extract start/end for position segment
-    pos_start.position = start_.position.p;
-    pos_end.position = end_.position.p;
-    
-    pos_start.arcConditions = start_.arcConditionsPosition;
-    pos_end.arcConditions = end_.arcConditionsPosition;
+    pos_start = start_.pathConditionsPosition; // do this first as we will override ::x afterwards
+    pos_start.x = start_.position.p;
+    pos_end = end_.pathConditionsPosition;  // do this first as we will override ::x afterwards
+    pos_end.x = end_.position.p;
     
     // extract start/end for orientation segment (parameterizes the angle solely)
     or_trans_ = Eigen::AngleAxisd( end_.position.q * start_.position.q.inverse() );
-    or_start.position = Eigen::Matrix<double, 1, 1>();
-    or_start.position << 0.0;
-    or_end.position = Eigen::Matrix<double, 1, 1>();
-    or_end.position << or_trans_.angle();
     
-    or_start.arcConditions = start_.arcConditionsOrientation;
-    or_end.arcConditions = end_.arcConditionsOrientation;
+    or_start = start_.pathConditionsOrientation; // do this first as we will override ::x afterwards
+    or_start.x << 0.0;
+    or_end = end_.pathConditionsOrientation; // do this first as we will override ::x afterwards
+    or_end.x << or_trans_.angle();
     
     // extract bounds for position segment
     PathBounds3d pos_bounds;

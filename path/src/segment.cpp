@@ -16,32 +16,64 @@ Eigen::VectorXd stack( const Eigen::VectorXd& vec_top, const Eigen::VectorXd& ve
   return vstack;
 }
 
+bool PathSegment::init()
+{
+  if ( path_bounds_.dx.size() <= 0 || path_bounds_.ddx.size() <= 0 || path_bounds_.j.size() <= 0 )
+    throw std::invalid_argument( "Bounds should have been initialized with correct size in PathSegment." );
+  
+  // project PathConditions onto the path to set the PathCondition.arcConditions
+  /** \todo same for dds and j ? */
+  ArcConditions arcconds_start = cond_start_.getArcConditions();
+  ArcConditions arcconds_end = cond_end_.getArcConditions();
+  double norm;
+  if ( cond_start_.dx.size() > 0 && !cond_start_.dx.hasNaN() ) { // we have a valid desired dx condition
+    norm = this->getDerivative( 1, 0.0 ).norm();
+    if ( norm > kZero ) // we have a not null f'
+      arcconds_start.ds = cond_start_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+  }
+  if ( cond_end_.dx.size() > 0 && !cond_end_.dx.hasNaN() ) { // we have a valid desired dx condition
+    norm = this->getDerivative( 1, this->getLength() ).norm();
+    if ( norm > kZero ) // we have a not null f'
+      arcconds_end.ds = cond_end_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+  }
+  
+  cond_start_.setArcConditions( arcconds_start );
+  cond_end_.setArcConditions( arcconds_end );
+  
+  return true;
+}
+
 StackedSegments::StackedSegments(const std::vector<std::shared_ptr<PathSegment> >& segments)
 {
-  this->init_stack( segments );
+  this->setSegments( segments );
 }
 
 StackedSegments::StackedSegments( std::shared_ptr< PathSegment >& segment_top, std::shared_ptr< PathSegment >& segment_bottom )
     : StackedSegments( std::vector<std::shared_ptr<PathSegment> >{segment_top, segment_bottom} )
 {}
 
-bool StackedSegments::init_stack( const std::vector<std::shared_ptr<PathSegment> >& segments )
+bool StackedSegments::init()
 {
+  // we do not call PathSegment::init() on purpose, since StackedSegments is a wrapper
   this->length_ = 1.0; // unit arc variable used for StackedSegments
-  this->segments_ = segments;
+  
+  this->path_bounds_ = PathBounds(0); // reset to zero
+  
+  bool ret = true;
   for ( const auto& seg : segments_ ) {
+    ret &= seg->init();
     this->path_bounds_.dx = stack( this->path_bounds_.dx, seg->getPathBounds().dx );
     this->path_bounds_.ddx = stack( this->path_bounds_.ddx, seg->getPathBounds().ddx );
     this->path_bounds_.j = stack( this->path_bounds_.j, seg->getPathBounds().j );
   }
-  this->cond_start_.position = this->getConfiguration( 0.0 ); // use the newly implemented interface
-  this->cond_end_.position = this->getConfiguration( 0.0 );
+  this->cond_start_.x = this->getConfiguration( 0.0 ); // use the newly implemented interface
+  this->cond_end_.x = this->getConfiguration( 0.0 );
   
   /** 
    * \todo now adapt conditions.arcConditions 
    */
   
-  return true;
+  return ret;
 }
 
 Eigen::VectorXd StackedSegments::do_get_derivative(unsigned int order, double s) const
@@ -71,9 +103,15 @@ Eigen::VectorXd StackedSegments::do_get_derivative_cwise_abs_max(unsigned int or
 
 LinearSegment::LinearSegment( const PathConditions& start, const PathConditions& end, const PathBounds& bounds )
     : PathSegment( start, end, bounds )
+{}
+
+bool LinearSegment::init()
 {
-  this->length_ = (end.position - start.position).norm();
+  bool ret = PathSegment::init();
+  this->length_ = (cond_end_.x - cond_start_.x).norm();
+  return ret;
 }
+
 
 Eigen::VectorXd LinearSegment::do_get_derivative( unsigned int order, double s ) const
 {
@@ -87,7 +125,7 @@ Eigen::VectorXd LinearSegment::do_get_derivative( unsigned int order, double s )
       break;
     }
     default: {
-      return Eigen::VectorXd::Zero( this->cond_start_.position.size() );
+      return Eigen::VectorXd::Zero( this->cond_start_.x.size() );
       break;
     }
   }
@@ -101,7 +139,7 @@ Eigen::VectorXd LinearSegment::do_get_derivative_cwise_abs_max( unsigned int ord
       break;
     }
     default: {
-      return Eigen::VectorXd::Zero( this->cond_start_.position.size() );
+      return Eigen::VectorXd::Zero( this->cond_start_.x.size() );
       break;
     }
   }
@@ -110,10 +148,10 @@ Eigen::VectorXd LinearSegment::do_get_derivative_cwise_abs_max( unsigned int ord
 Eigen::VectorXd LinearSegment::get_derivative_0( double s ) const
 {
   if ( this->getLength() < kZero )
-    return this->cond_start_.position;
+    return this->cond_start_.x;
   
   s /= this->getLength();
-  return ( 1.0 - s ) * this->cond_start_.position + s * this->cond_end_.position;
+  return ( 1.0 - s ) * this->cond_start_.x + s * this->cond_end_.x;
 }
 
 Eigen::VectorXd LinearSegment::get_derivative_1( double s ) const
@@ -121,16 +159,21 @@ Eigen::VectorXd LinearSegment::get_derivative_1( double s ) const
   (void) s; // for linear segments, the tangent (1st) is constant, so arc length is unused
   /** \fixme what to do when length zero ? */
   if ( this->getLength() < kZero )
-    return Eigen::VectorXd::Ones( this->cond_start_.position.size() );
+    return Eigen::VectorXd::Ones( this->cond_start_.x.size() );
   
-  return ( this->cond_end_.position - this->cond_start_.position ) / this->getLength();
+  return ( this->cond_end_.x - this->cond_start_.x ) / this->getLength();
 }
 
 
 SmoothStep7::SmoothStep7( const PathConditions& start, const PathConditions& end, const PathBounds& bounds )
     : PathSegment( start, end, bounds )
+{}
+
+bool SmoothStep7::init() 
 {
-  this->length_ = 1.0;
+  bool ret = PathSegment::init();
+  this->length_ = 1.0; // unit parameter for SmoothStep7
+  return ret;
 }
 
 Eigen::VectorXd SmoothStep7::do_get_derivative( unsigned int order, double s ) const
@@ -186,7 +229,7 @@ Eigen::VectorXd SmoothStep7::get_derivative_0( double s ) const
   s = std::min( std::max( s, 0.0 ), 1.0 ); // clamp
   double s_4 = s * s * s * s;
   double f = s_4 * ( -20*s*s*s + 70*s*s - 84*s + 35 );
-  return (1.0 - f) * this->cond_start_.position + f * this->cond_end_.position;
+  return (1.0 - f) * this->cond_start_.x + f * this->cond_end_.x;
 }
 
 Eigen::VectorXd SmoothStep7::get_derivative_1( double s ) const
@@ -194,7 +237,7 @@ Eigen::VectorXd SmoothStep7::get_derivative_1( double s ) const
   s = std::min( std::max( s, 0.0 ), 1.0 ); // clamp
   double s_3 = s * s * s;
   double fp = s_3 * ( -140*s*s*s + 420*s*s - 420*s + 140 );
-  return -fp * this->cond_start_.position + fp * this->cond_end_.position;
+  return -fp * this->cond_start_.x + fp * this->cond_end_.x;
 }
 
 Eigen::VectorXd SmoothStep7::get_derivative_2( double s ) const
@@ -202,55 +245,60 @@ Eigen::VectorXd SmoothStep7::get_derivative_2( double s ) const
   s = std::min( std::max( s, 0.0 ), 1.0 ); // clamp
   double s_2 = s * s;
   double fpp = s_2 * ( -840*s*s*s + 2100*s*s - 1680*s + 420 );
-  return -fpp * this->cond_start_.position + fpp * this->cond_end_.position;
+  return -fpp * this->cond_start_.x + fpp * this->cond_end_.x;
 }
 
 Eigen::VectorXd SmoothStep7::get_derivative_3( double s ) const
 {
   s = std::min( std::max( s, 0.0 ), 1.0 ); // clamp
   double fppp = s * ( -4200*s*s*s + 8400*s*s - 5040*s + 840 );
-  return -fppp * this->cond_start_.position + fppp * this->cond_end_.position;
+  return -fppp * this->cond_start_.x + fppp * this->cond_end_.x;
 }
 
 
 CircularBlend::CircularBlend( const PathConditions& start, const PathConditions& end, const PathBounds& bounds, 
                               const Eigen::VectorXd& waypoint, 
                               double maxDeviation )
-    : BlendSegment< double >( start, end, bounds, waypoint, maxDeviation )
+    : BlendSegment< double >( start, end, bounds, waypoint, maxDeviation ),
+      i_waypoint_( waypoint ), i_max_deviation_( maxDeviation )
+{}
+
+bool CircularBlend::init()
 {
-  const Eigen::VectorXd startDirection = normalizedOrZero(waypoint - start.position);
-  const Eigen::VectorXd endDirection = normalizedOrZero(end.position - waypoint);
+  BlendSegment::init();
+  const Eigen::VectorXd startDirection = normalizedOrZero(i_waypoint_ - i_cond_start_.x);
+  const Eigen::VectorXd endDirection = normalizedOrZero(i_cond_end_.x - i_waypoint_);
   
-  if ( ( waypoint - start.position ).norm() < kZero || ( end.position - waypoint ).norm() < kZero 
+  if ( ( i_waypoint_ - i_cond_start_.x ).norm() < kZero || ( i_cond_end_.x - i_waypoint_ ).norm() < kZero 
         ||
         (startDirection - endDirection).norm() < kZero // this is a i.Pi corner, no blend possible
   ) {
     length_ = 0.0;
     radius_ = 1.0;
-    center_ = waypoint;
+    center_ = i_waypoint_;
     x_ = Eigen::VectorXd::Zero(center_.size());
     y_ = x_;
   } else {
-    double distance = std::min((start.position - waypoint).norm(), (end.position - waypoint).norm());
+    double distance = std::min((i_cond_start_.x - i_waypoint_).norm(), (i_cond_end_.x - i_waypoint_).norm());
     double cosangle = startDirection.dot(endDirection);
     cosangle = std::min( 1.0, std::max( -1.0, cosangle ) );
     const double angle = std::acos(cosangle);
     if( std::isnan( angle ) )
       throw std::runtime_error( "Path angle is invalid" );
 
-    distance = std::min(distance, maxDeviation * sin(0.5 * angle) / (1.0 - std::cos(0.5 * angle)));  // enforce max deviation
+    distance = std::min(distance, i_max_deviation_ * sin(0.5 * angle) / (1.0 - std::cos(0.5 * angle)));  // enforce max deviation
 
     radius_ = distance / tan(0.5 * angle);
     length_ = angle * radius_;
 
-    center_ = waypoint + normalizedOrZero(endDirection - startDirection) * radius_ / std::cos(0.5 * angle);
-    x_ = normalizedOrZero(waypoint - distance * startDirection - center_);
+    center_ = i_waypoint_ + normalizedOrZero(endDirection - startDirection) * radius_ / std::cos(0.5 * angle);
+    x_ = normalizedOrZero(i_waypoint_ - distance * startDirection - center_);
     y_ = startDirection;
   }
   
   // store the effective start/end conditions 
-  this->cond_start_.position = this->getConfiguration(0.0);
-  this->cond_end_.position = this->getConfiguration(0.0);
+  this->cond_start_.x = this->getConfiguration(0.0);
+  this->cond_end_.x = this->getConfiguration(0.0);
 }
 
 
@@ -335,17 +383,23 @@ Eigen::VectorXd CircularBlend::get_derivative_3(double s) const
 
 
 CartesianSegmentBase::CartesianSegmentBase( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
-                        const CartesianPoint& start, const CartesianPoint& end ) 
+                        const Pose& start, const Pose& end ) 
 {
-  this->init_cartesianbase( segment_pos_, segment_or_, cart_start_, cart_end_ );
+  this->set( segment_position, segment_orientation, start, end );
 }
 
-bool CartesianSegmentBase::init_cartesianbase( std::shared_ptr<PathSegment> segment_position, std::shared_ptr<PathSegment> segment_orientation, 
-                                               const CartesianPoint& start, const CartesianPoint& end )
+bool CartesianSegmentBase::set( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
+                        const Pose& start, const Pose& end )
 {
-  this->init_stack( std::vector< std::shared_ptr< PathSegment > >{ segment_pos_, segment_or_ } );
-  cart_start_ = start, cart_end_ = end; 
+  cart_start_ = start, cart_end_ = end;  
   segment_pos_ = segment_position, segment_or_ = segment_orientation;
+  return true;
+}
+
+bool CartesianSegmentBase::init()
+{
+  StackedSegments::setSegments( std::vector< std::shared_ptr< PathSegment > >{ segment_pos_, segment_or_ } );
+  StackedSegments::init();
   
   /** \fixme should not throw exception ( used in constructors ! ) */
   // check dimensions
@@ -354,12 +408,16 @@ bool CartesianSegmentBase::init_cartesianbase( std::shared_ptr<PathSegment> segm
   
   // check that we have a match for position solely (orientation representation is different)
   if ( 
-      ( segment_pos_->getConfiguration(0.0) - start.p ).norm() > kZero 
+      ( segment_pos_->getConfiguration(0.0) - cart_start_.p ).norm() > kZero 
       ||
-      ( segment_pos_->getConfiguration(segment_pos_->getLength()) - end.p ).norm() > kZero )
+      ( segment_pos_->getConfiguration(segment_pos_->getLength()) - cart_end_.p ).norm() > kZero )
+  {
+    std::cout << segment_pos_->getConfiguration(0.0).transpose() << std::endl;
+    std::cout << cart_start_.p.transpose() << std::endl;
     throw std::runtime_error( "Inconsistent position segment and start/end points in CartesianSegmentBase." );
+  }
   
-  or_trans_ = Eigen::AngleAxisd( end.q * start.q.inverse() );
+  or_trans_ = Eigen::AngleAxisd( cart_end_.q * cart_start_.q.inverse() );
   
   if (
       std::fabs( 0.0 - segment_or_->getConfiguration(0.0)[0] ) > kZero // not starting at zero
@@ -372,7 +430,7 @@ bool CartesianSegmentBase::init_cartesianbase( std::shared_ptr<PathSegment> segm
 
 Eigen::VectorXd CartesianSegmentBase::getPosition( const ArcConditions& arc_conditions ) const {
   Eigen::VectorXd v4d = this->getConfiguration( arc_conditions.s );
-  CartesianPoint p;
+    Pose p;
   p.p = v4d.segment( 0, 3 );
   /** \todo check that if v4d[3] == 0 => q = cart_start_.q AND v4d[3] = or_trans_.angle() => q = cart_end_.q */
   p.q = Eigen::AngleAxisd( v4d[3], or_trans_.axis() ) * cart_start_.q ; 

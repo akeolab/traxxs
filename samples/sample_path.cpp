@@ -25,17 +25,17 @@ int main(void) {
   sptr< PathSegment > seg_start, seg_1_blend, seg_2, seg_3, seg_end;
   
   PathConditions wpt_start, wpt_1, wpt_2, wpt_3, wpt_end, wpt_blend_s, wpt_blend_e;
-  wpt_start.position = Eigen::Vector2d();
-  wpt_1.position = Eigen::Vector2d();
-  wpt_2.position = Eigen::Vector2d();
-  wpt_3.position = Eigen::Vector2d();
-  wpt_end.position = Eigen::Vector2d();
+  wpt_start.x = Eigen::Vector2d();
+  wpt_1.x = Eigen::Vector2d();
+  wpt_2.x = Eigen::Vector2d();
+  wpt_3.x = Eigen::Vector2d();
+  wpt_end.x = Eigen::Vector2d();
   
-  wpt_start.position  << 0, 0 ;
-  wpt_1.position      << 1, 0 ;
-  wpt_2.position      << 1, 1 ;
-  wpt_3.position      << .5, 1 ;
-  wpt_end.position    << 0, 1 ;
+  wpt_start.x  << 0, 0 ;
+  wpt_1.x      << 1, 0 ;
+  wpt_2.x      << 1, 1 ;
+  wpt_3.x      << .5, 1 ;
+  wpt_end.x    << 0, 1 ;
   
   PathBounds path_bounds;
   Eigen::Vector2d ones = Eigen::VectorXd::Ones(2);
@@ -44,9 +44,15 @@ int main(void) {
   path_bounds.j   = 100 * ones;
   
   // first the blend, so that we can use the start and end of the blend
-  seg_1_blend = std::make_shared< CircularBlend >( wpt_start, wpt_2, path_bounds,  wpt_1.position, 0.1 );
-  wpt_blend_s.position = seg_1_blend->getConfiguration( 0.0 );
-  wpt_blend_e.position = seg_1_blend->getConfiguration( seg_1_blend->getLength() );
+  seg_1_blend = std::make_shared< CircularBlend >( wpt_start, wpt_2, path_bounds,  wpt_1.x, 0.1 );
+  
+  
+  seg_1_blend->init();
+  wpt_blend_s.x = seg_1_blend->getConfiguration( 0.0 );
+  wpt_blend_e.x = seg_1_blend->getConfiguration( seg_1_blend->getLength() );
+  
+  std::cout<< wpt_blend_s.x.transpose() << std::endl;
+  std::cout<< wpt_blend_e.x.transpose() << std::endl;
   
   seg_start = std::make_shared< LinearSegment >( wpt_start, wpt_blend_s, path_bounds );
   // seg_1_blend = 
@@ -55,7 +61,10 @@ int main(void) {
   seg_end = std::make_shared< LinearSegment >( wpt_3, wpt_end, path_bounds );
   
   std::vector< sptr< PathSegment > > segments{ seg_start, seg_1_blend, seg_2, seg_3, seg_end };
+  for( auto& seg : segments )
+    seg->init();
   Path path( segments );
+  path.init();
   
   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   sptr< PathSegment > cur, prev;

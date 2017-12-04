@@ -24,21 +24,21 @@ int main(void) {
   
   PathConditions wpt_start, wpt_1, wpt_end, wpt_blend_s, wpt_blend_e;
   PathConditions bottom_wpt_start, bottom_wpt_1, bottom_wpt_end;
-  wpt_start.position = Eigen::Vector2d();
-  wpt_1.position = Eigen::Vector2d();
-  wpt_end.position = Eigen::Vector2d();
+  wpt_start.x = Eigen::Vector2d();
+  wpt_1.x = Eigen::Vector2d();
+  wpt_end.x = Eigen::Vector2d();
   
-  bottom_wpt_start.position = Eigen::Matrix<double, 1, 1>();
-  bottom_wpt_1.position = Eigen::Matrix<double, 1, 1>();
-  bottom_wpt_end.position = Eigen::Matrix<double, 1, 1>();
+  bottom_wpt_start.x = Eigen::Matrix<double, 1, 1>();
+  bottom_wpt_1.x = Eigen::Matrix<double, 1, 1>();
+  bottom_wpt_end.x = Eigen::Matrix<double, 1, 1>();
   
-  wpt_start.position  << 0, 0 ;
-  wpt_1.position      << 1, 0 ;
-  wpt_end.position    << 1, 1 ;
+  wpt_start.x  << 0, 0 ;
+  wpt_1.x      << 1, 0 ;
+  wpt_end.x    << 1, 1 ;
   
-  bottom_wpt_start.position << 0;
-  bottom_wpt_1.position     << 1;
-  bottom_wpt_end.position   << 0;
+  bottom_wpt_start.x << 0;
+  bottom_wpt_1.x     << 1;
+  bottom_wpt_end.x   << 0;
   
   PathBounds path_bounds, bottom_path_bounds;
   Eigen::VectorXd ones = Eigen::VectorXd::Ones(2);
@@ -55,9 +55,10 @@ int main(void) {
   // the top segments
   //
   // first the blend, so that we can use the start and end of the blend
-  top_seg_1_blend = std::make_shared< CircularBlend >( wpt_start, wpt_end, path_bounds, wpt_1.position, 0.1 );
-  wpt_blend_s.position = top_seg_1_blend->getConfiguration( 0.0 );
-  wpt_blend_e.position = top_seg_1_blend->getConfiguration( top_seg_1_blend->getLength() );
+  top_seg_1_blend = std::make_shared< CircularBlend >( wpt_start, wpt_end, path_bounds, wpt_1.x, 0.1 );
+  top_seg_1_blend->init();
+  wpt_blend_s.x = top_seg_1_blend->getConfiguration( 0.0 );
+  wpt_blend_e.x = top_seg_1_blend->getConfiguration( top_seg_1_blend->getLength() );
   
   top_seg_start = std::make_shared< LinearSegment >( wpt_start, wpt_blend_s, path_bounds );
   // seg_1_blend = 
@@ -78,7 +79,10 @@ int main(void) {
   stack_seg_end = std::make_shared< StackedSegments >( top_seg_end, bottom_seg_end );
   
   std::vector< sptr< PathSegment > > segments{ stack_seg_start, stack_seg_1_blend, stack_seg_end };
+  for ( auto& seg : segments )
+    seg->init();
   Path path( segments );
+  path.init();
   
   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   sptr< PathSegment > cur, prev;
