@@ -125,7 +125,7 @@ bool ArcTrajGenSoftMotion::sm_traj_compute(SM_TRAJ& traj, const std::vector<SM_C
 
 bool ArcTrajGenSoftMotion::sm_traj_conditions_at_time(SM_TRAJ& traj, double time, std::vector<SM_COND>& c_out)
 {
-  int cret = this->sm_traj_.getMotionCond( std::min( std::max( time, 0.0 ), this->getDuration() ), c_out );
+  int cret = traj.getMotionCond( std::min( std::max( time, 0.0 ), this->getDuration() ), c_out );
   return (cret == 0);
 }
 
