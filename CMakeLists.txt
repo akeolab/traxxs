@@ -10,3 +10,4 @@ add_subdirectory( impl )
 
 add_subdirectory( samples )
 
+file( COPY python DESTINATION ${CMAKE_CURRENT_BINARY_DIR} )

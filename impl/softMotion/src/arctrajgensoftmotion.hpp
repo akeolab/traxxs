@@ -6,6 +6,34 @@ bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_COND& c_out );
 bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_LIMITS& c_out );
 
 bool fromSoftMotion( const SM_COND& c_in, traxxs::arc::ArcConditions& c_out, double time = std::nan("") );
+bool fromSoftMotion( const SM_LIMITS& limits_in, traxxs::arc::ArcConditions& c_out, double time = std::nan("") );
+
+/** 
+ * \brief This wrapper adds an "out-of-bounds" feature to SM_TRAJ
+ * SM_TRAJ does not handle cases where initial conditions do not respect bounds.
+ */
+class SmTrajWrapper {
+ public:
+  SmTrajWrapper();
+  
+ public:
+  int computeTraj( std::vector<SM_COND> IC, std::vector<SM_COND> FC, std::vector<SM_LIMITS> limits, SM_TRAJ::SM_TRAJ_MODE mode );
+  int getMotionCond( double time, std::vector<SM_COND> & cond );
+  double getDuration();
+  
+ protected:
+   SM_TRAJ sm_traj_;  
+   double brake_duration_ = 0;
+   /** \brief the ICs from the parameters */
+   SM_COND ic_;
+   /** \brief the ICs used by the SM_TRAJ, i.e. after braking (if needed) */
+   SM_COND ic_smtraj_;
+   
+   std::list< traxxs::arc::JerkSegment > brake_segments_;
+};
+
+// using SmTraj_t = SM_TRAJ;
+using SmTraj_t = SmTrajWrapper;
 
 /**
  * \brief an ArcTrajGen implementation using softMotion
@@ -20,10 +48,10 @@ class ArcTrajGenSoftMotion : public traxxs::arc::ArcTrajGen
   virtual double do_get_duration() override;
   
 protected: 
-  bool sm_traj_compute( SM_TRAJ& traj, const std::vector<SM_COND>& c_i );
-  bool sm_traj_conditions_at_time( SM_TRAJ& traj, double time, std::vector<SM_COND>& c_out );
+  bool sm_traj_compute( SmTraj_t& traj, const std::vector<SM_COND>& c_i );
+  bool sm_traj_conditions_at_time( SmTraj_t& traj, double time, std::vector<SM_COND>& c_out );
   
  protected:
-   SM_TRAJ sm_traj_;
+   SmTraj_t sm_traj_;
    double duration_ = std::nan("");
 };

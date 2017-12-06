@@ -32,10 +32,82 @@ bool fromSoftMotion( const SM_COND& c_in, traxxs::arc::ArcConditions& c_out, dou
   return true;
 }
 
+bool fromSoftMotion( const SM_LIMITS& limits_in, traxxs::arc::ArcConditions& c_out, double time /*= std::nan("")*/ )
+{
+  c_out.ds  = limits_in.maxVel;
+  c_out.dds = limits_in.maxAcc;
+  c_out.j   = limits_in.maxJerk;
+  if ( !std::isnan( time ) )
+    c_out.t = time;
+  return true;
+}
+
+SmTrajWrapper::SmTrajWrapper()
+{
+  this->sm_traj_ = SM_TRAJ();
+  this->brake_duration_ = 0.0;
+}
+
+int SmTrajWrapper::computeTraj( std::vector<SM_COND> IC, std::vector<SM_COND> FC, std::vector<SM_LIMITS> limits, SM_TRAJ::SM_TRAJ_MODE mode ) 
+{
+  // made only for 1D trajectories, in SM_TRAJ::SM_INDEPENDANT mode
+  if ( IC.size() != 1 || FC.size() != 1 || limits.size() != 1 || mode != SM_TRAJ::SM_INDEPENDANT )
+    throw std::invalid_argument( "SmTrajWrapper only handles 1D trajectories in SM_TRAJ::SM_INDEPENDANT mode." );
+  
+  /** \todo check if IC in bounds ! If not, IC for SM_TRAJ are different from params, resulting from braking phase */
+  limits[0].maxVel = std::fabs( limits[0].maxVel );
+  limits[0].maxAcc = std::fabs( limits[0].maxAcc );
+  limits[0].maxJerk = std::fabs( limits[0].maxJerk );
+  ic_ = IC[0];
+  ic_smtraj_ = IC[0];
+  if ( std::fabs( ic_.v ) <= limits[0].maxVel && std::fabs( ic_.a ) < limits[0].maxAcc ) {
+    // then it's all good
+    this->brake_duration_ = 0.0;
+  } else {
+    traxxs::arc::ArcConditions t_ic, t_lims, t_out;
+    fromSoftMotion( ic_smtraj_, t_ic, /*time = */ 0.0 );
+    fromSoftMotion( limits[0], t_lims );
+    t_ic.t = 0.0;
+    brake_segments_ = maxJerkBrakeToLimits( t_ic, t_lims );
+    traxxs::arc::integrate( brake_segments_, t_ic, t_out );
+    toSoftMotion( t_out, ic_smtraj_ );
+    this->brake_duration_ = t_out.t;
+  }
+  
+  std::cout<< "Braking during " << brake_duration_ << std::endl;
+  
+  return this->sm_traj_.computeTraj( std::vector<SM_COND>{ ic_smtraj_ }, FC, limits, mode );
+}
+
+int SmTrajWrapper::getMotionCond(double time, std::vector<SM_COND>& cond)
+{
+  if ( time >= brake_duration_ ) {
+    return this->sm_traj_.getMotionCond( time - this->brake_duration_, cond );
+  } else {
+    traxxs::arc::ArcConditions t_ic, t_out;
+    fromSoftMotion( ic_, t_ic );
+    traxxs::arc::integrate( brake_segments_, t_ic, t_out, time );
+    SM_COND t_cond;
+    toSoftMotion( t_out, t_cond );
+    cond = std::vector<SM_COND>{ t_cond };
+    return SM_STATUS::SM_OK;
+  }
+}
+
+
+double SmTrajWrapper::getDuration()
+{
+  return this->sm_traj_.getDuration() + this->brake_duration_;
+}
+
+
+
+
+
 
 bool ArcTrajGenSoftMotion::do_init()
 {
-  this->sm_traj_ = SM_TRAJ();
+  this->sm_traj_ = SmTraj_t();
 }
 
 bool ArcTrajGenSoftMotion::do_compute()
@@ -61,12 +133,11 @@ bool ArcTrajGenSoftMotion::do_compute_next_conditions( const traxxs::arc::ArcCon
 {
   if ( std::isnan( this->dt_ ) )
     return false; // without a period set, what is the "next" condition ?
-  SM_TRAJ traj;
+  SmTraj_t traj;
   SM_COND c_i;
   if ( !toSoftMotion( c_in, c_i ) )
     return false;
-  std::vector< SM_COND > c_i_s;
-  c_i_s.push_back( c_i );
+  std::vector< SM_COND > c_i_s{ c_i };
   
   if ( !this->sm_traj_compute( traj, c_i_s ) )
     return false;
@@ -79,7 +150,7 @@ bool ArcTrajGenSoftMotion::do_compute_next_conditions( const traxxs::arc::ArcCon
   return true;
 }
 
-bool ArcTrajGenSoftMotion::do_get_conditions_at_time(double t, traxxs::arc::ArcConditions& c_out)
+bool ArcTrajGenSoftMotion::do_get_conditions_at_time( double t, traxxs::arc::ArcConditions& c_out )
 {
   /** \todo implement something to store the status of the computation (UNDEF, SUCCESS, FAILURE), preferably in ArcTrajGen */
   if ( std::isnan( this->getDuration() ) )
@@ -99,7 +170,7 @@ double ArcTrajGenSoftMotion::do_get_duration()
 }
 
 
-bool ArcTrajGenSoftMotion::sm_traj_compute(SM_TRAJ& traj, const std::vector<SM_COND>& c_i)
+bool ArcTrajGenSoftMotion::sm_traj_compute( SmTraj_t& traj, const std::vector<SM_COND>& c_i )
 {
   /** 
    * \todo check for nans in conditions and limits
@@ -112,20 +183,18 @@ bool ArcTrajGenSoftMotion::sm_traj_compute(SM_TRAJ& traj, const std::vector<SM_C
   ret &= toSoftMotion( this->c_f_, c_f );
   ret &= toSoftMotion( this->c_max_, c_max );
   if ( ret ) {
-    std::vector<SM_COND> c_f_s;
-    std::vector<SM_LIMITS> c_max_s;
-    c_f_s.push_back( c_f );
-    c_max_s.push_back( c_max );
+    std::vector<SM_COND> c_f_s{ c_f };
+    std::vector<SM_LIMITS> c_max_s{ c_max };
     int cret = traj.computeTraj( c_i, c_f_s, c_max_s, SM_TRAJ::SM_INDEPENDANT );
-    ret &= (cret == 0);
+    ret &= (cret == SM_STATUS::SM_OK);
   }
   
   return ret;
 }
 
-bool ArcTrajGenSoftMotion::sm_traj_conditions_at_time(SM_TRAJ& traj, double time, std::vector<SM_COND>& c_out)
+bool ArcTrajGenSoftMotion::sm_traj_conditions_at_time( SmTraj_t& traj, double time, std::vector<SM_COND>& c_out )
 {
   int cret = traj.getMotionCond( std::min( std::max( time, 0.0 ), this->getDuration() ), c_out );
-  return (cret == 0);
+  return (cret == SM_STATUS::SM_OK);
 }
 
