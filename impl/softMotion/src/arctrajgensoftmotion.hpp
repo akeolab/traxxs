@@ -2,6 +2,9 @@
 #include <traxxs/arc/arc.hpp>
 #include <cmath>
 
+
+static const double kSoftMotionInfinityBound = 1.e12;
+
 bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_COND& c_out );
 bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_LIMITS& c_out );
 
@@ -10,26 +13,26 @@ bool fromSoftMotion( const SM_LIMITS& limits_in, traxxs::arc::ArcConditions& c_o
 
 /** 
  * \brief This wrapper adds an "out-of-bounds" feature to SM_TRAJ
- * SM_TRAJ does not handle cases where initial conditions do not respect bounds.
+ * Indeed, SM_TRAJ alone does not handle cases where initial conditions do not respect bounds.
  */
-class SmTrajWrapper {
+class SmTrajWrapper 
+{
  public:
   SmTrajWrapper();
-  
+
  public:
   int computeTraj( std::vector<SM_COND> IC, std::vector<SM_COND> FC, std::vector<SM_LIMITS> limits, SM_TRAJ::SM_TRAJ_MODE mode );
   int getMotionCond( double time, std::vector<SM_COND> & cond );
   double getDuration();
   
  protected:
-   SM_TRAJ sm_traj_;  
-   double brake_duration_ = 0;
-   /** \brief the ICs from the parameters */
-   SM_COND ic_;
-   /** \brief the ICs used by the SM_TRAJ, i.e. after braking (if needed) */
-   SM_COND ic_smtraj_;
-   
-   std::list< traxxs::arc::JerkSegment > brake_segments_;
+  SM_TRAJ sm_traj_;  
+  SM_TRAJ brake_sm_traj_;
+  double brake_duration_ = 0.0;
+  /** \brief the ICs from the parameters */
+  SM_COND ic_;
+  /** \brief the ICs used by the SM_TRAJ, i.e. after braking (if needed) */
+  SM_COND ic_smtraj_;
 };
 
 // using SmTraj_t = SM_TRAJ;

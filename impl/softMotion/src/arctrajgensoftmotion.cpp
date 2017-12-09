@@ -60,21 +60,35 @@ int SmTrajWrapper::computeTraj( std::vector<SM_COND> IC, std::vector<SM_COND> FC
   limits[0].maxJerk = std::fabs( limits[0].maxJerk );
   ic_ = IC[0];
   ic_smtraj_ = IC[0];
-  if ( std::fabs( ic_.v ) <= limits[0].maxVel && std::fabs( ic_.a ) < limits[0].maxAcc ) {
+  if ( std::fabs( ic_.v ) <= limits[0].maxVel && std::fabs( ic_.a ) <= limits[0].maxAcc ) {
     // then it's all good
     this->brake_duration_ = 0.0;
-  } else {
-    traxxs::arc::ArcConditions t_ic, t_lims, t_out;
-    fromSoftMotion( ic_smtraj_, t_ic, /*time = */ 0.0 );
-    fromSoftMotion( limits[0], t_lims );
-    t_ic.t = 0.0;
-    brake_segments_ = maxJerkBrakeToLimits( t_ic, t_lims );
-    traxxs::arc::integrate( brake_segments_, t_ic, t_out );
-    toSoftMotion( t_out, ic_smtraj_ );
-    this->brake_duration_ = t_out.t;
+  } else if ( std::fabs( ic_.a ) <= limits[0].maxAcc ) { // if we have an out-of-bounds velocity solely
+    SM_COND brake_ic, brake_fc;
+    SM_LIMITS brake_limits;
+    brake_ic = ic_;
+    brake_limits = limits[0];
+    brake_limits.maxVel = std::fabs( brake_ic.v );
+    brake_fc.v = ( ic_.v > 0 ? +1 : -1 ) * limits[0].maxVel ;
+    brake_fc.a = 0.0; // set null acceleration after braking to ensure we reach a viable state
+    double critical_length;
+    // the critical length is the minimum distance to reach the FC within the bounds. If longer, will lead to oscillations
+    int ret = sm_CalculOfCriticalLength(brake_ic, brake_fc, brake_limits, &critical_length);
+    if ( ret != SM_STATUS::SM_OK )
+      return ret;
+    brake_fc.x = brake_ic.x + critical_length;
+    ret = brake_sm_traj_.computeTraj( std::vector<SM_COND>{ brake_ic }, std::vector<SM_COND>{ brake_fc }, std::vector<SM_LIMITS>{ brake_limits }, mode );
+    if ( ret != SM_STATUS::SM_OK )
+      return ret;
+    brake_duration_ = brake_sm_traj_.getDuration();
+    std::vector<SM_COND> conds_after_brake;
+    brake_sm_traj_.getMotionCond( brake_duration_, conds_after_brake );
+    ic_smtraj_ = conds_after_brake[0];
+  } else { // acceleration in out of bounds, with potentially out-of-bounds velocity
+    /** \todo what about acceleration bounds ?
+     */
+    throw std::runtime_error( "Acceleration out of bounds not implemented." );
   }
-  
-  std::cout<< "Braking during " << brake_duration_ << std::endl;
   
   return this->sm_traj_.computeTraj( std::vector<SM_COND>{ ic_smtraj_ }, FC, limits, mode );
 }
@@ -84,13 +98,7 @@ int SmTrajWrapper::getMotionCond(double time, std::vector<SM_COND>& cond)
   if ( time >= brake_duration_ ) {
     return this->sm_traj_.getMotionCond( time - this->brake_duration_, cond );
   } else {
-    traxxs::arc::ArcConditions t_ic, t_out;
-    fromSoftMotion( ic_, t_ic );
-    traxxs::arc::integrate( brake_segments_, t_ic, t_out, time );
-    SM_COND t_cond;
-    toSoftMotion( t_out, t_cond );
-    cond = std::vector<SM_COND>{ t_cond };
-    return SM_STATUS::SM_OK;
+    return this->brake_sm_traj_.getMotionCond( time, cond );
   }
 }
 
