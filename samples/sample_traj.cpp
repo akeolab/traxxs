@@ -19,8 +19,8 @@ int main(void) {
   
 //   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
-  path::PathWaypoint pt_start(2), pt_wpt(2), pt_end(2), wpt_blend_s(2), wpt_blend_e(2);
-  sptr< traxxs::path::PathSegment > seg_start, seg_blend, seg_end;
+  path::PathWaypoint pt_start(2), pt_wpt(2), pt_end(2);
+  sptr< path::PathSegment > seg_start, seg_blend, seg_end;
   
   pt_start.x  << 0, 0 ;
   pt_wpt.x    << 1, 0 ;
@@ -29,31 +29,25 @@ int main(void) {
   pt_start.pathConditions.dx << 0, 0;
   pt_end.pathConditions.dx   << 0, 0;
   
-  wpt_blend_s = pt_start;
-  wpt_blend_e = pt_end;
-  blendStartEndFromWaypoints( wpt_blend_s, wpt_blend_e, pt_wpt );
+//   // use this to arrive on the blend with null velocity
+//   pt_end.pathConditions.dx   << 0, 0;
   
   path::PathBounds path_bounds(2);
   path_bounds.dx << 1.0, 1.0;
   path_bounds.ddx = 10.0 * path_bounds.dx;
   path_bounds.j = 10.0 * path_bounds.ddx;
   
-  // first the blend, so that we can use the start and end of the blend
-  seg_blend = std::make_shared< traxxs::path::CircularBlend >( wpt_blend_s, wpt_blend_e, path_bounds,  pt_wpt.x, 0.1 );
+  using JoiningSegment_t  = path::LinearSegment;
+  using BlendSegment_t    = path::CircularBlend;
 
-  seg_blend->init();
-  wpt_blend_s.x = seg_blend->getConfiguration( 0.0 );
-  wpt_blend_e.x = seg_blend->getConfiguration( seg_blend->getLength() );
+  std::vector< path::PathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
+  auto segments = path::blendedSegmentsFromWaypoints< path::PathWaypoint, JoiningSegment_t, BlendSegment_t, double>( 
+   path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
   
-  seg_start = std::make_shared< traxxs::path::LinearSegment >( pt_start, wpt_blend_s, path_bounds );
-  seg_end = std::make_shared< traxxs::path::LinearSegment >( wpt_blend_e, pt_end, path_bounds );
-  
-  std::vector< sptr< traxxs::path::PathSegment > > segments{ seg_start, seg_blend, seg_end };
   for( auto& seg : segments )
     seg->init();
-  traxxs::path::Path path( segments );
+  path::Path path( segments );
   path.init();
-  
 
   std::vector< std::shared_ptr< arc::ArcTrajGen > > arctrajgens;
   for ( unsigned int i = 0; i < path.getSegments().size(); ++i )
@@ -61,8 +55,6 @@ int main(void) {
   trajectory::Trajectory trajectory;
   
   trajectory.set( path.getSegments(), arctrajgens );
-  
-//   return 0;
   
   int seg_idx;
   trajectory::TrajectoryState state;
