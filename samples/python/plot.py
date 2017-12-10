@@ -1,6 +1,12 @@
+
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+
+kIsCartesian = False
+lbl_xyz = ['x','y','z']
+lbl_quat = ['qx','qy','qz', 'qw']
+plt.ion()
 
 argc = len( sys.argv )
 if argc < 2:
@@ -11,19 +17,81 @@ print( "Will plot {}".format( fp ) )
 data = np.loadtxt( fp, delimiter = ";" )
 
 t = data[:,0]
-s = data[:,1]
-ds = data[:,2]
-dds = data[:,3]
-j = data[:,4]
+seg = data[:,1]
+s = data[:,2]
+ds = data[:,3]
+dds = data[:,4]
+j = data[:,5]
 
-f, axarr = plt.subplots(4, sharex=True)
+plt.plot( t, seg )
+plt.title( "segments" )
+
+f, axarr = plt.subplots(3)
 axarr[0].plot(t, s)
+axarr[0].set_title( "s" )
 axarr[1].plot(t, ds)
+axarr[1].set_title( "ds" )
 axarr[2].plot(t, dds)
-axarr[3].plot(t, j)
+axarr[2].set_title( "dds" )
+
+fourNs = data.shape[1] - 6  # remaining x, dx, ddx, j 
+if fourNs == (7 + 6*3):
+  kIsCartesian = True
+  N = 6
+else:
+  kIsCartesian = False
+  N = int( fourNs / 4.0 )
+
+idx = 6
+if not kIsCartesian:
+  x = data[:,idx:idx+N]
+  idx = idx + N
+else:
+  x = data[:,idx:idx+7]
+  idx = idx + 7
+dx = data[:,idx:idx+N]
+idx = idx + N
+ddx = data[:,idx:idx+N]
+idx = idx + N
+#ddx = data[:,idx:idx+N]
+#idx = idx + N
 
 
-for i in range( data.shape[0] ):
-  print( "t = {: >8.3f} \t {: >8.3f}  \t {: >8.3f}  \t {: >8.3f}  \t {: >8.3f} ".format( t[i], s[i], ds[i], dds[i], j[i] ) )
+if kIsCartesian:
+  f, axarr = plt.subplots(2)
+  for i in range( 3 ):
+    axarr[0].plot(t, x[:,i], label="dof={}".format( lbl_xyz[i] ) )
+  axarr[0].set_title( "position" )
+  axarr[0].legend()
+  for i in range( 4 ):
+    axarr[1].plot(t, x[:,3+i], label="dof={}".format( lbl_quat[i] ) )
+  axarr[1].set_title( "orientation" )
+  axarr[1].legend()
+  
+  for (vec, name) in [( dx, 'velocity' ), ( ddx, 'acceleration' ) ]:
+    f, axarr = plt.subplots(2)
+    for i in range( 3 ):
+      axarr[0].plot(t, vec[:,i], label="dof={}".format( lbl_xyz[i] ) )
+    axarr[0].set_title( "linear " + name )
+    axarr[0].legend()
+    for i in range( 3 ):
+      axarr[1].plot(t, vec[:,3+i], label="dof={}".format( lbl_xyz[i] ) )
+    axarr[1].set_title( "angular " + name )
+    axarr[1].legend()
+    
+else:
+  for (vec, name) in [( x, 'position' ), ( dx, 'velocity' ), ( ddx, 'acceleration' ) ]:
+    f, axarr = plt.subplots(1)
+    for i in range( N ):
+      axarr.plot(t, vec[:,i], label="dof={}".format( lbl_xyz[i] ) )
+    axarr.set_title( name )
+    axarr.legend()
+  
+
 
 plt.show()
+
+try:
+  input("Enter to quit.")
+except:
+  pass
