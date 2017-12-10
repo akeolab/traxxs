@@ -6,7 +6,7 @@
 namespace traxxs {
 namespace constants {
   
-static const double kZero = 1.e-12;
+static const double kZero = 1.e-15;
 static const double kInf = std::numeric_limits<double>::infinity();
 
 } // namespace traxxs

@@ -13,6 +13,8 @@ namespace arc {
  */
 struct ArcConditions 
 {
+  ArcConditions( double s = std::nan(""), double ds = std::nan(""), double dds = std::nan(""), double j = std::nan(""), double t = std::nan("") )
+      : s( s ), ds( ds ), dds( dds ), j( j ), t( t ) {}
   double s = std::nan("");
   double ds = std::nan("");
   double dds = std::nan("");
@@ -50,7 +52,7 @@ class ArcTrajGen
    * \param[out] c_out the conditions
    */
   virtual bool getConditionsAtTime( double t, ArcConditions& c_out ) final { return do_get_conditions_at_time( t, c_out ); }
-  /** \brief get the complete duration of a previously computed profile. Returns std::nan() on error. */
+  /** \brief get the complete duration of a previously computed profile. Returns std::nan() on uncomputed, or error. */
   virtual double getDuration() final { return do_get_duration(); }
   
   // setters
@@ -74,7 +76,7 @@ class ArcTrajGen
   virtual bool do_compute_next_conditions( const ArcConditions& c_in, ArcConditions& c_out ) = 0;
   /** \brief implementation of getConditionsAtTime() */
   virtual bool do_get_conditions_at_time( double t, ArcConditions& c_out ) = 0;
-  /** \brief implementation of getDuration() */
+  /** \brief implementation of getDuration(). Should return std::nan() on uncomputed, or error. */
   virtual double do_get_duration() = 0;
   
 protected:
