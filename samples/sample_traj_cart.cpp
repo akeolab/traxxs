@@ -48,7 +48,7 @@ int main(void) {
   using BlendSegment_t    = path::CartesianSegment< path::CircularBlend, path::SmoothStep7 >;
 
   std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
-  auto segments = path::blendedSegmentsFromCartesianWaypoints< JoiningSegment_t, BlendSegment_t, double>( 
+  auto segments = path::blendedSegmentsFromWaypoints< path::CartesianPathWaypoint, JoiningSegment_t, BlendSegment_t, double>( 
    path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
   path::Path path( segments );
   

@@ -13,22 +13,32 @@ void blendStartEndFromWaypoints( CartesianPathWaypoint& wpt_start, CartesianPath
 void blendStartEndFromWaypoints( PathWaypoint& wpt_start, PathWaypoint& wpt_end, PathWaypoint& wpt );
 
 
+template < class BlendSegment_t, typename... Args >
+std::shared_ptr < PathSegment > createBlendSegmentPositionOnly( const PathBounds& path_bounds, const CartesianPathWaypoint& start, const CartesianPathWaypoint& end, const CartesianPathWaypoint& wpt, Args... args ) {
+  return std::make_shared< BlendSegment_t >(
+      start, end, path_bounds, wpt.x.p, args... );
+}  
 
-template < class Segment_t, class BlendSegment_t, typename... Args >
-std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypoints( const PathBounds& path_bounds, const std::vector< CartesianPathWaypoint >& waypoints, Args... args ) {
+template < class BlendSegment_t, typename... Args >
+std::shared_ptr < PathSegment > createBlendSegmentPositionOnly( const PathBounds& path_bounds, const PathWaypoint& start, const PathWaypoint& end, const PathWaypoint& wpt, Args... args ) {
+  return std::make_shared< BlendSegment_t >(
+      start, end, path_bounds, wpt.x, args... );
+}  
+
+template < class Waypoint_t, class Segment_t, class BlendSegment_t, typename... Args >
+std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromWaypoints( const PathBounds& path_bounds, const std::vector< Waypoint_t >& waypoints, Args... args ) {
   
   std::vector< std::shared_ptr < PathSegment > > segments; // will hold all segments, including blends. This is the returned value
   std::vector< std::shared_ptr < PathSegment > > blends; // will hold the blends solely
   
   // first create all blend segments BlendSegment_t for waypoints, i.e. every waypoint except first and last
-  CartesianPathWaypoint start, wpt, end;
+  Waypoint_t start, wpt, end;
   for ( unsigned int iwpt = 1; iwpt < waypoints.size() - 1; ++iwpt ) {
     start = waypoints[iwpt-1];
     wpt   = waypoints[iwpt];
     end   = waypoints[iwpt+1];
     blendStartEndFromWaypoints( start, end, wpt );
-    std::shared_ptr < PathSegment > seg = std::make_shared< BlendSegment_t >(
-      start, end, path_bounds, wpt.x.p, args... );
+    std::shared_ptr < PathSegment > seg = createBlendSegmentPositionOnly< BlendSegment_t, Args... >( path_bounds, start, end, wpt, args... );
     // initialize the blend segment so that we can extract its start/end
     seg->init();
     blends.push_back( seg );
@@ -42,7 +52,7 @@ std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypo
       start = waypoints[0]; // if first blend, we have to join from the first waypoint
     
     tmp.s = 0.0; // the end of the joining segment is the start of the blend
-    end = CartesianPathWaypoint(); // reset
+    end = Waypoint_t(); // reset
     end.x = blend->getPosition( tmp ); 
     
     std::shared_ptr < PathSegment > seg = std::make_shared< Segment_t >(
@@ -52,7 +62,7 @@ std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypo
     segments.push_back( blend );
     
     tmp.s = blend->getLength(); // the start of the NEXT joining segment is the end of the PREVIOUS blend
-    start = CartesianPathWaypoint(); // reset
+    start = Waypoint_t(); // reset
     start.x = blend->getPosition( tmp );
     
     // finish cleanly
