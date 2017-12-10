@@ -28,3 +28,6 @@ target_link_libraries(sample_path_cart traxxs)
 
 add_executable( sample_traj sample_traj.cpp )
 target_link_libraries(sample_traj traxxs arctrajgensoftmotion)
+
+add_executable( sample_traj_cart sample_traj_cart.cpp )
+target_link_libraries(sample_traj_cart traxxs arctrajgensoftmotion)
