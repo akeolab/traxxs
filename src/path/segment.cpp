@@ -37,8 +37,13 @@ bool traxxs::path::PathSegment::init()
       arcconds_end.ds = cond_end_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
   }
   
+  arcconds_start.s = 0;
+  arcconds_end.s = this->getLength();
+  
   cond_start_.setArcConditions( arcconds_start );
   cond_end_.setArcConditions( arcconds_end );
+  
+  
   
   return true;
 }
@@ -59,6 +64,7 @@ bool traxxs::path::StackedSegments::init()
   
   this->path_bounds_ = PathBounds(0); // reset to zero
   
+  // we have to reconstruct the path_bounds
   bool ret = true;
   for ( const auto& seg : segments_ ) {
     ret &= seg->init();
@@ -66,8 +72,10 @@ bool traxxs::path::StackedSegments::init()
     this->path_bounds_.ddx = stack( this->path_bounds_.ddx, seg->getPathBounds().ddx );
     this->path_bounds_.j = stack( this->path_bounds_.j, seg->getPathBounds().j );
   }
+  // we have to reconstruct the start/end path conditions
+  
   this->cond_start_.x = this->getConfiguration( 0.0 ); // use the newly implemented interface
-  this->cond_end_.x = this->getConfiguration( 0.0 );
+  this->cond_end_.x = this->getConfiguration( this->length_ );
   
   /** 
    * \todo now adapt conditions.arcConditions 
@@ -107,8 +115,8 @@ traxxs::path::LinearSegment::LinearSegment( const PathConditions& start, const P
 
 bool traxxs::path::LinearSegment::init()
 {
-  bool ret = PathSegment::init();
   this->length_ = (cond_end_.x - cond_start_.x).norm();
+  bool ret = PathSegment::init();
   return ret;
 }
 
@@ -171,9 +179,8 @@ traxxs::path::SmoothStep7::SmoothStep7( const PathConditions& start, const PathC
 
 bool traxxs::path::SmoothStep7::init() 
 {
-  bool ret = PathSegment::init();
   this->length_ = 1.0; // unit parameter for SmoothStep7
-  return ret;
+  return PathSegment::init();
 }
 
 Eigen::VectorXd traxxs::path::SmoothStep7::do_get_derivative( unsigned int order, double s ) const
@@ -265,7 +272,6 @@ traxxs::path::CircularBlend::CircularBlend( const PathConditions& start, const P
 
 bool traxxs::path::CircularBlend::init()
 {
-  BlendSegment::init();
   const Eigen::VectorXd startDirection = normalizedOrZero(i_waypoint_ - i_cond_start_.x);
   const Eigen::VectorXd endDirection = normalizedOrZero(i_cond_end_.x - i_waypoint_);
   
@@ -296,9 +302,7 @@ bool traxxs::path::CircularBlend::init()
     y_ = startDirection;
   }
   
-  // store the effective start/end conditions 
-  this->cond_start_.x = this->getConfiguration(0.0);
-  this->cond_end_.x = this->getConfiguration(0.0);
+  return BlendSegment::init();
 }
 
 

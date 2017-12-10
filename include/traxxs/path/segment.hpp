@@ -37,11 +37,12 @@ struct PathConditions
     this->x.setConstant(   sz, std::nan("") );
     this->dx.setConstant(  sz, std::nan("") );
     this->ddx.setConstant( sz, std::nan("") );
+    this->j.setConstant( sz, std::nan("") );
   }
   Eigen::VectorXd x;
   Eigen::VectorXd dx;
   Eigen::VectorXd ddx;
-  /** \todo jerk ? */
+  Eigen::VectorXd j;
  
   arc::ArcConditions getArcConditions() const { return this->arc_conditions_; }
   bool setArcConditions( const arc::ArcConditions& arc_conditions ) { this->arc_conditions_ = arc_conditions; return true; }
@@ -56,7 +57,7 @@ struct PathConditions
 
 struct CartesianPathConditions
 {
-    Pose position;
+  Pose position;
   PathConditions pathConditionsPosition = PathConditions( 3 );
   PathConditions pathConditionsOrientation = PathConditions( 1 );
 };
@@ -88,10 +89,12 @@ struct PathBounds4d : PathBounds
   PathBounds4d() : PathBounds( 4 ) {}
 };
 
-
+class StackedSegments;
 
 class PathSegment 
 {
+  friend class StackedSegments;
+  
  public:
   /** \brief default constructor */
   PathSegment(){}
@@ -213,6 +216,9 @@ class BlendSegment : public PathSegment
   }
  public: 
   virtual bool init() override {
+    // store the effective start/end conditions 
+    this->cond_start_.x = this->getConfiguration(0.0);
+    this->cond_end_.x = this->getConfiguration( this->getLength() );
     return ( true && PathSegment::init() );
   }
 };
@@ -401,6 +407,7 @@ class CartesianSegment : public CartesianSegmentBase
     // now do the rest of the setup
     ret &= CartesianSegmentBase::set( segment_pos_, segment_or_, start_.position, end_.position );
     ret &= CartesianSegmentBase::init();
+    
     return ret;
   }
   
@@ -425,13 +432,11 @@ class CartesianSegment : public CartesianSegmentBase
     or_end.x << or_trans_.angle();
     
     // extract bounds for position segment
-    PathBounds3d pos_bounds;
     pos_bounds.dx   = bounds_.dx.segment(0,3);
     pos_bounds.ddx  = bounds_.ddx.segment(0,3);
     pos_bounds.j    = bounds_.j.segment(0,3);
     
     // extract bounds for orientation segment
-    PathBounds1d or_bounds;
     or_bounds.dx  = bounds_.dx.segment(3,1);
     or_bounds.ddx = bounds_.ddx.segment(3,1);
     or_bounds.j   = bounds_.j.segment(3,1);
@@ -454,7 +459,7 @@ class CartesianSegment : public CartesianSegmentBase
   
  protected:
    CartesianPathConditions start_, end_;
-   PathBounds bounds_;
+   PathBounds bounds_; // the PathSegment::path_bounds_ will be computed in StackedSegment::init(). These ones are just for storage
    PathConditions pos_start, pos_end;
    PathBounds3d pos_bounds;
    PathConditions or_start, or_end;
