@@ -82,7 +82,7 @@ Eigen::VectorXd traxxs::path::StackedSegments::do_get_derivative(unsigned int or
   double L, mult;
   for ( const auto& seg : segments_ ) {
     L = seg->getLength();
-    mult = std::pow( L, mult );
+    mult = std::pow( L, order );
     der = stack( der, mult * seg->getDerivative( order, s * L ) );
   }
   return der;
@@ -94,7 +94,7 @@ Eigen::VectorXd traxxs::path::StackedSegments::do_get_derivative_cwise_abs_max(u
   double L, mult;
   for ( const auto& seg : segments_ ) {
     L = seg->getLength();
-    mult = std::pow( L, mult );
+    mult = std::pow( L, order );
     der = stack( der, mult * seg->getDerivativeCwiseAbsMax( order ) );
   }
   return der;
