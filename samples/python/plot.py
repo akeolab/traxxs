@@ -58,34 +58,38 @@ idx = idx + N
 
 
 if kIsCartesian:
-  f, axarr = plt.subplots(2)
+  f, axarr = plt.subplots(2,3)
+  ax_i = 0
+  ax_j = 0
   for i in range( 3 ):
-    axarr[0].plot(t, x[:,i], label="dof={}".format( lbl_xyz[i] ) )
-  axarr[0].set_title( "position" )
-  axarr[0].legend()
+    axarr[ax_i+0, ax_j].plot(t, x[:,i], label="dof={}".format( lbl_xyz[i] ) )
+  axarr[ax_i+0, ax_j].set_title( "position" )
+  axarr[ax_i+0, ax_j].legend()
   for i in range( 4 ):
-    axarr[1].plot(t, x[:,3+i], label="dof={}".format( lbl_quat[i] ) )
-  axarr[1].set_title( "orientation" )
-  axarr[1].legend()
-  
+    axarr[ax_i+1, ax_j].plot(t, x[:,3+i], label="dof={}".format( lbl_quat[i] ) )
+  axarr[ax_i+1, ax_j].set_title( "orientation" )
+  axarr[ax_i+1, ax_j].legend()
+  ax_j += 1
   for (vec, name) in [( dx, 'velocity' ), ( ddx, 'acceleration' ) ]:
-    f, axarr = plt.subplots(2)
     for i in range( 3 ):
-      axarr[0].plot(t, vec[:,i], label="dof={}".format( lbl_xyz[i] ) )
-    axarr[0].set_title( "linear " + name )
-    axarr[0].legend()
+      axarr[ax_i+0, ax_j].plot(t, vec[:,i], label="dof={}".format( lbl_xyz[i] ) )
+    axarr[ax_i+0, ax_j].set_title( "linear " + name )
+    axarr[ax_i+0, ax_j].legend()
     for i in range( 3 ):
-      axarr[1].plot(t, vec[:,3+i], label="dof={}".format( lbl_xyz[i] ) )
-    axarr[1].set_title( "angular " + name )
-    axarr[1].legend()
+      axarr[ax_i+1, ax_j].plot(t, vec[:,3+i], label="dof={}".format( lbl_xyz[i] ) )
+    axarr[ax_i+1, ax_j].set_title( "angular " + name )
+    axarr[ax_i+1, ax_j].legend()
+    ax_j += 1
     
 else:
+  f, axarr = plt.subplots(1,3)
+  ax_j = 0
   for (vec, name) in [( x, 'position' ), ( dx, 'velocity' ), ( ddx, 'acceleration' ) ]:
-    f, axarr = plt.subplots(1)
     for i in range( N ):
-      axarr.plot(t, vec[:,i], label="dof={}".format( lbl_xyz[i] ) )
-    axarr.set_title( name )
-    axarr.legend()
+      axarr[ax_j].plot(t, vec[:,i], label="dof={}".format( lbl_xyz[i] ) )
+    axarr[ax_j].set_title( name )
+    axarr[ax_j].legend()
+    ax_j += 1
   
 
 
