@@ -5,23 +5,29 @@
 
 namespace traxxs {
 namespace path {
+  
+/** \brief enforces rules on start/end waypoints for blend segments */
+void blendStartEndFromWaypoints( CartesianPathConditions& wpt_start, CartesianPathConditions& wpt_end, CartesianPathConditions& wpt );
 
-template < class Segment_t, class BlendSegment_t, class OrientationSegment_t, typename... Args >
+/** \brief enforces rules on start/end waypoints for blend segments */
+void blendStartEndFromWaypoints( PathConditions& wpt_start, PathConditions& wpt_end, PathConditions& wpt );
+
+
+
+template < class Segment_t, class BlendSegment_t, typename... Args >
 std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypoints( const PathBounds& path_bounds, const std::vector< CartesianPathConditions >& waypoints, Args... args ) {
   
-  std::vector< std::shared_ptr < PathSegment > > segments;
+  std::vector< std::shared_ptr < PathSegment > > segments; // will hold all segments, including blends. This is the returned value
+  std::vector< std::shared_ptr < PathSegment > > blends; // will hold the blends solely
   
   // first create all blend segments BlendSegment_t for waypoints, i.e. every waypoint except first and last
-  std::vector< std::shared_ptr < PathSegment > > blends;
   CartesianPathConditions start, wpt, end;
   for ( unsigned int iwpt = 1; iwpt < waypoints.size() - 1; ++iwpt ) {
     start = waypoints[iwpt-1];
     wpt   = waypoints[iwpt];
     end   = waypoints[iwpt+1];
-    // on blends, we do not change orientation !
-    start.position.q = wpt.position.q;
-    end.position.q = wpt.position.q;
-    std::shared_ptr < PathSegment > seg = std::make_shared< CartesianSegment< BlendSegment_t, OrientationSegment_t > >(
+    blendStartEndFromWaypoints( start, end, wpt );
+    std::shared_ptr < PathSegment > seg = std::make_shared< BlendSegment_t >(
       start, end, path_bounds, wpt.position.p, args... );
     // initialize the blend segment so that we can extract its start/end
     seg->init();
@@ -39,7 +45,7 @@ std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypo
     end = CartesianPathConditions(); // reset
     end.position = blend->getPosition( tmp ); 
     
-    std::shared_ptr < PathSegment > seg = std::make_shared< CartesianSegment< Segment_t, OrientationSegment_t > >(
+    std::shared_ptr < PathSegment > seg = std::make_shared< Segment_t >(
       start, end, path_bounds );
     seg->init(); // blend has already been init'ed
     segments.push_back( seg );
@@ -53,7 +59,7 @@ std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromCartesianWaypo
     if ( iblend == blends.size()-1 ) {
       end = waypoints[waypoints.size()-1];
       segments.push_back( 
-        std::make_shared< CartesianSegment< Segment_t, OrientationSegment_t > >(
+        std::make_shared< Segment_t >(
           start, end, path_bounds )
       );
       segments.back()->init();
@@ -75,6 +81,7 @@ class Path
   Path( std::vector< std::shared_ptr < PathSegment > > segments );
  public:
   virtual bool init();
+  virtual const std::vector< std::shared_ptr < PathSegment > >& getSegments() { return this->segments_; };
  protected: 
   std::vector< std::shared_ptr < PathSegment > > segments_;
 };

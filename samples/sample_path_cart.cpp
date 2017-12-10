@@ -35,8 +35,10 @@ int main(void) {
   path_bounds.ddx = 10.0 * path_bounds.dx;
   path_bounds.j = 10.0 * path_bounds.ddx;
   
+  using JoiningSegment_t  = path::CartesianSegment< path::LinearSegment, path::SmoothStep7 >;
+  using BlendSegment_t    = path::CartesianSegment< path::CircularBlend, path::SmoothStep7 >;
   std::vector< path::CartesianPathConditions > waypoints = { pt_start, pt_wpt, pt_end};
-  std::vector< sptr< path::PathSegment > > segments = path::blendedSegmentsFromCartesianWaypoints< path::LinearSegment, path::CircularBlend, path::SmoothStep7, double>( 
+  std::vector< sptr< path::PathSegment > > segments = path::blendedSegmentsFromCartesianWaypoints< JoiningSegment_t, BlendSegment_t, double>( 
    path_bounds, waypoints, 0.1 );
   path::Path path( segments );
   

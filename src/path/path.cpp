@@ -1,6 +1,28 @@
 #include <traxxs/path/path.hpp>
 #include <traxxs/constants.hpp>
 
+
+void traxxs::path::blendStartEndFromWaypoints( CartesianPathConditions& wpt_start, CartesianPathConditions& wpt_end, CartesianPathConditions& wpt ) {
+  // on blends, we do not change orientation !
+  wpt_start.position.q = wpt.position.q;
+  wpt_end.position.q = wpt.position.q;
+  // for blends, start and end velocity/acc conditions are the one of the waypoint
+  wpt_start.pathConditionsPosition = wpt.pathConditionsPosition;
+  wpt_start.pathConditionsOrientation = wpt.pathConditionsOrientation;
+  wpt_end.pathConditionsPosition = wpt.pathConditionsPosition;
+  wpt_end.pathConditionsOrientation = wpt.pathConditionsOrientation;
+}  
+
+void traxxs::path::blendStartEndFromWaypoints( PathConditions& wpt_start, PathConditions& wpt_end, PathConditions& wpt ) {
+  Eigen::VectorXd x;
+  x = wpt_start.x;
+  wpt_start = wpt;
+  wpt_start.x = x;
+  x = wpt_end.x;
+  wpt_end = wpt;
+  wpt_end.x = x;
+}  
+
 traxxs::path::Path::Path( std::vector< std::shared_ptr < PathSegment > > segments )
     : segments_( segments )
 {
@@ -14,6 +36,8 @@ bool traxxs::path::Path::init()
   arc::ArcConditions arc_bounds;
   arc::ArcConditions arc_cond_start, arc_cond_end;
   for ( auto& seg : segments_ ) {
+    
+    /** \todo check for NaNs in path_bounds -> NaNs would mess with all following computations */
     path_bounds = seg->getPathBounds();
     arc_cond_start = seg->getStartArcConditions();
     arc_cond_end = seg->getEndArcConditions();
@@ -24,6 +48,7 @@ bool traxxs::path::Path::init()
     arc_bounds.ds = std::numeric_limits<double>::max();
     arc_bounds.dds = std::numeric_limits<double>::max();
     arc_bounds.j = std::numeric_limits<double>::max();
+    
     
     if ( is_line ) {
       // if it is a line, we have f''(s) = 0, f'''(s) = 0
@@ -50,13 +75,14 @@ bool traxxs::path::Path::init()
       
       // first, handle the case dds = 0 && ddds = 0
       for ( unsigned int dim = 0; dim < path_bounds.dx.size() ; ++dim ){
-        if ( seg->getDerivativeCwiseAbsMax( 1 )[dim] >= constants::kZero )
+        if ( seg->getDerivativeCwiseAbsMax( 1 )[dim] > constants::kZero )
           arc_bounds.ds = std::fmin( arc_bounds.ds, path_bounds.dx[dim] / seg->getDerivativeCwiseAbsMax( 1 )[dim] );
-        if ( seg->getDerivativeCwiseAbsMax( 2 )[dim] >= constants::kZero )
+        if ( seg->getDerivativeCwiseAbsMax( 2 )[dim] > constants::kZero )
           arc_bounds.ds = std::fmin( arc_bounds.ds, std::sqrt( path_bounds.ddx[dim] / seg->getDerivativeCwiseAbsMax( 2 )[dim] ) );
-        if ( seg->getDerivativeCwiseAbsMax( 3 )[dim] >= constants::kZero )
-          arc_bounds.ds = std::fmin( arc_bounds.ds, std::sqrt( path_bounds.j[dim] / seg->getDerivativeCwiseAbsMax( 3 )[dim] ) );
+        if ( seg->getDerivativeCwiseAbsMax( 3 )[dim] > constants::kZero )
+          arc_bounds.ds = std::fmin( arc_bounds.ds, std::cbrt( path_bounds.j[dim] / seg->getDerivativeCwiseAbsMax( 3 )[dim] ) );
       }
+    
       
       double ds, dds, ddds;
       double fp, fpp, fppp;
@@ -69,9 +95,10 @@ bool traxxs::path::Path::init()
           dx = path_bounds.dx[dim];
           ddx = path_bounds.ddx[dim];
           fp = seg->getDerivativeCwiseAbsMax( 1 )[dim];
-          if ( fp < constants::kZero )  continue; // in this case, dds has no influence on acceleration, same for ds on velocity
+          if ( fp <= constants::kZero )  continue; // in this case, dds has no influence on acceleration, same for ds on velocity
           fpp = seg->getDerivativeCwiseAbsMax( 2 )[dim];
-          if ( fpp < constants::kZero ) {
+          
+          if ( fpp <= constants::kZero ) {
             // simple case, like a line (at least for vel and acc, not for jerk)
             ds = dx / fp;
             dds = ddx / fp;
@@ -83,6 +110,7 @@ bool traxxs::path::Path::init()
             dds2 = ( -fp + std::sqrt( discr ) ) / ( 2.0 * fpp );
             
             dds = std::fmax( dds1, dds2 ); // the min will be the negative value, so we take the max (hopefully positive)
+            
             /** 
              * \note this is arbitrary, in order to maximize equally ds and dds
              * \fixme find something better
@@ -105,7 +133,7 @@ bool traxxs::path::Path::init()
         // we need to go further and comply with the jerk constraint
         for ( unsigned int dim = 0; dim < path_bounds.dx.size() ; ++dim ) {
           fp = seg->getDerivativeCwiseAbsMax( 1 )[dim];
-          if ( fp < constants::kZero )  continue; // in this case, ddds has no influence on jerk
+          if ( fp <= constants::kZero )  continue; // in this case, ddds has no influence on jerk
           fpp = seg->getDerivativeCwiseAbsMax( 2 )[dim];
           fppp = seg->getDerivativeCwiseAbsMax( 3 )[dim];
           ds = arc_bounds.ds;
@@ -147,11 +175,11 @@ bool traxxs::path::Path::init()
     else                                
       arc_cond_start.ds = ( (arc_cond_start.ds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_start.ds), arc_bounds.ds );
     if ( std::isnan( arc_cond_start.dds ) ) 
-      arc_cond_start.dds = arc_bounds.dds;
+      arc_cond_start.dds = 0; //arc_bounds.dds; //if full acceleration and full velocity, might not be viable
     else                                
       arc_cond_start.dds = ( (arc_cond_start.dds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_start.dds), arc_bounds.dds );
     if ( std::isnan( arc_cond_start.j ) )   
-      arc_cond_start.j = arc_bounds.j;
+      arc_cond_start.j = 0; // arc_bounds.j;
     else                                
       arc_cond_start.j = ( (arc_cond_start.j > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_start.j), arc_bounds.j );
     // end conditions
@@ -160,18 +188,18 @@ bool traxxs::path::Path::init()
     else                                
       arc_cond_end.ds = ( (arc_cond_end.ds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_end.ds), arc_bounds.ds );
     if ( std::isnan( arc_cond_end.dds ) )   
-      arc_cond_end.dds = arc_bounds.dds;
+      arc_cond_end.dds = 0; // arc_bounds.dds;
     else                                
       arc_cond_end.dds = ( (arc_cond_end.dds > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_end.dds), arc_bounds.dds );
     if ( std::isnan( arc_cond_end.j ) )     
-      arc_cond_end.j = arc_bounds.j;
+      arc_cond_end.j = 0; //arc_bounds.j;
     else                                
       arc_cond_end.j = ( (arc_cond_end.j > 0) ? +1 : -1 ) * std::fmin( std::fabs(arc_cond_end.j), arc_bounds.j );
-    
     
     seg->setArcBounds( arc_bounds );
     seg->setStartArcConditions( arc_cond_start );
     seg->setEndArcConditions( arc_cond_end );
+    
   } // end for loop on segments
   
   /** 
@@ -268,9 +296,6 @@ bool traxxs::path::Path::init()
             }
           }
       }
-      
-      
-      
       prev->setEndArcConditions( arc_cond_end_prev );
     }
     cur->setStartArcConditions( arc_cond_start );
