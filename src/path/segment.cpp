@@ -77,9 +77,34 @@ bool traxxs::path::StackedSegments::init()
   this->cond_start_.x = this->getConfiguration( 0.0 ); // use the newly implemented interface
   this->cond_end_.x = this->getConfiguration( this->length_ );
   
-  /** 
-   * \todo now adapt conditions.arcConditions 
-   */
+  this->cond_start_.dx = Eigen::VectorXd();
+  for ( const auto& seg : segments_ )
+    this->cond_start_.dx = stack( this->cond_start_.dx, seg->cond_start_.dx );
+  this->cond_end_.dx = Eigen::VectorXd();
+  for ( const auto& seg : segments_ )
+    this->cond_end_.dx = stack( this->cond_end_.dx, seg->cond_end_.dx );
+  
+  // now adapt start/end arc conditions
+  arc::ArcConditions arcconds_start = cond_start_.getArcConditions();
+  arc::ArcConditions arcconds_end = cond_end_.getArcConditions();
+  
+  double norm;
+  if ( cond_start_.dx.size() > 0 && !cond_start_.dx.hasNaN() ) { // we have a valid desired dx condition
+    norm = this->getDerivative( 1, 0.0 ).norm();
+    if ( norm > constants::kZero ) // we have a not null f'
+      arcconds_start.ds = cond_start_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+  }
+  if ( cond_end_.dx.size() > 0 && !cond_end_.dx.hasNaN() ) { // we have a valid desired dx condition
+    norm = this->getDerivative( 1, this->getLength() ).norm();
+    if ( norm > constants::kZero ) // we have a not null f'
+      arcconds_end.ds = cond_end_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+  }
+  
+  arcconds_start.s = 0;
+  arcconds_end.s = this->getLength();
+  
+  cond_start_.setArcConditions( arcconds_start );
+  cond_end_.setArcConditions( arcconds_end );
   
   return ret;
 }
