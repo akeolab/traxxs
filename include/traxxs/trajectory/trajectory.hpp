@@ -20,6 +20,15 @@ class Trajectory {
    /** \brief sets the trajectory with segments and arc trajectory generators. All trajectory generators will be fed with their respective segment start/end conditions and bounds */
   virtual bool set( const std::vector< std::shared_ptr< path::PathSegment > >& segments, const std::vector< std::shared_ptr< arc::ArcTrajGen > >& arctrajgens );
   
+  /** \brief sets the trajectory with segments and an arc trajectory class. All trajectory generators will be created with default ctor and will be fed with their respective segment start/end conditions and bounds */
+  template < class ArcTrajGen_t >
+  bool set( const std::vector< std::shared_ptr< path::PathSegment > >& segments ) {
+    std::vector< std::shared_ptr< arc::ArcTrajGen > > arctrajgens;
+    for ( unsigned int i = 0; i < segments.size(); ++i )
+      arctrajgens.push_back( std::make_shared< ArcTrajGen_t >() );
+    return this->set( segments, arctrajgens );
+  }
+  
   virtual bool getState( double time, TrajectoryState& state_out, int* idx_out = nullptr );
   virtual bool getArcConditions( double time, arc::ArcConditions& conds_out, std::shared_ptr<path::PathSegment>& segment_out, int* idx_out = nullptr );
   
