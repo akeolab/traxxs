@@ -54,14 +54,8 @@ int main(void) {
   
   path.init();
   
-  std::vector< std::shared_ptr< arc::ArcTrajGen > > arctrajgens;
-  for ( unsigned int i = 0; i < path.getSegments().size(); ++i )
-    arctrajgens.push_back( std::make_shared< ArcTrajGenSoftMotion >() );
   trajectory::Trajectory trajectory;
-  
-  trajectory.set( path.getSegments(), arctrajgens );
-  
-//   return 0;
+  trajectory.set< ArcTrajGenSoftMotion >( path.getSegments() );
   
   int seg_idx;
   trajectory::TrajectoryState state;
