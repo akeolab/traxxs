@@ -27,9 +27,9 @@ bool traxxs::trajectory::Trajectory::getState( double time, traxxs::trajectory::
   if( !ret )
     return ret;
   state_out.x   = seg->getPosition( conds );
-  state_out.dx  = seg->getVelocity( conds );
-  state_out.ddx = seg->getAcceleration( conds );
-  state_out.j   = seg->getJerk( conds );
+  state_out.pathConditions.dx  = seg->getVelocity( conds );
+  state_out.pathConditions.ddx = seg->getAcceleration( conds );
+  state_out.pathConditions.j   = seg->getJerk( conds );
   
   return ret;
 }

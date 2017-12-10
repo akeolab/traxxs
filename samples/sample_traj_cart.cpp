@@ -19,15 +19,15 @@ int main(void) {
   
 //   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
-  path::CartesianPathConditions pt_start, pt_wpt, pt_end;
+  path::CartesianPathWaypoint pt_start, pt_wpt, pt_end;
   
-  pt_start.position.p  << 0, 0, 0;
-  pt_wpt.position.p    << 1, 0, 0;
-  pt_end.position.p    << 1, 1, 0;
+  pt_start.x.p  << 0, 0, 0;
+  pt_wpt.x.p    << 1, 0, 0;
+  pt_end.x.p    << 1, 1, 0;
   
-  pt_start.position.q  = Eigen::Quaterniond( 1, 0, 0, 0 ); // w, x, y , z
-  pt_wpt.position.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
-  pt_end.position.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
+  pt_start.x.q  = Eigen::Quaterniond( 1, 0, 0, 0 ); // w, x, y , z
+  pt_wpt.x.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
+  pt_end.x.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
   
   pt_start.pathConditionsPosition.dx << 0, 0, 0;
   pt_start.pathConditionsOrientation.dx << 0;
@@ -47,7 +47,7 @@ int main(void) {
   using JoiningSegment_t  = path::CartesianSegment< path::LinearSegment, path::SmoothStep7 >;
   using BlendSegment_t    = path::CartesianSegment< path::CircularBlend, path::SmoothStep7 >;
 
-  std::vector< path::CartesianPathConditions > waypoints = { pt_start, pt_wpt, pt_end};
+  std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
   auto segments = path::blendedSegmentsFromCartesianWaypoints< JoiningSegment_t, BlendSegment_t, double>( 
    path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
   path::Path path( segments );
@@ -74,7 +74,7 @@ int main(void) {
     std::cout << t << ";" << seg_idx
       << ";" << conds.s << ";" << conds.ds << ";" << conds.dds  << ";" << conds.j 
       << ";" << toCSV( state.x )
-      << ";" << toCSV( state.dx ) << ";" << toCSV( state.ddx ) << ";" << toCSV( state.j ) << std::endl;
+      << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
   }
   
   

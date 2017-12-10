@@ -19,15 +19,15 @@ int main(void) {
   
 //   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
-  path::PathConditions pt_start(2), pt_wpt(2), pt_end(2), wpt_blend_s(2), wpt_blend_e(2);
+  path::PathWaypoint pt_start(2), pt_wpt(2), pt_end(2), wpt_blend_s(2), wpt_blend_e(2);
   sptr< traxxs::path::PathSegment > seg_start, seg_blend, seg_end;
   
   pt_start.x  << 0, 0 ;
   pt_wpt.x    << 1, 0 ;
   pt_end.x    << 1, 1 ;
   
-  pt_start.dx << 0, 0;
-  pt_end.dx   << 0, 0;
+  pt_start.pathConditions.dx << 0, 0;
+  pt_end.pathConditions.dx   << 0, 0;
   
   wpt_blend_s = pt_start;
   wpt_blend_e = pt_end;
@@ -75,7 +75,7 @@ int main(void) {
     std::cout << t << ";" << seg_idx
       << ";" << conds.s << ";" << conds.ds << ";" << conds.dds  << ";" << conds.j 
       << ";" << toCSV( state.x )
-      << ";" << toCSV( state.dx ) << ";" << toCSV( state.ddx ) << ";" << toCSV( state.j ) << std::endl;
+      << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
   }
   
   

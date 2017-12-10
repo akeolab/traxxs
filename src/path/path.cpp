@@ -2,10 +2,10 @@
 #include <traxxs/constants.hpp>
 
 
-void traxxs::path::blendStartEndFromWaypoints( CartesianPathConditions& wpt_start, CartesianPathConditions& wpt_end, CartesianPathConditions& wpt ) {
+void traxxs::path::blendStartEndFromWaypoints( CartesianPathWaypoint& wpt_start, CartesianPathWaypoint& wpt_end, CartesianPathWaypoint& wpt ) {
   // on blends, we do not change orientation !
-  wpt_start.position.q = wpt.position.q;
-  wpt_end.position.q = wpt.position.q;
+  wpt_start.x.q = wpt.x.q;
+  wpt_end.x.q = wpt.x.q;
   // for blends, start and end velocity/acc conditions are the one of the waypoint
   wpt_start.pathConditionsPosition = wpt.pathConditionsPosition;
   wpt_start.pathConditionsOrientation = wpt.pathConditionsOrientation;
@@ -13,7 +13,7 @@ void traxxs::path::blendStartEndFromWaypoints( CartesianPathConditions& wpt_star
   wpt_end.pathConditionsOrientation = wpt.pathConditionsOrientation;
 }  
 
-void traxxs::path::blendStartEndFromWaypoints( PathConditions& wpt_start, PathConditions& wpt_end, PathConditions& wpt ) {
+void traxxs::path::blendStartEndFromWaypoints( PathWaypoint& wpt_start, PathWaypoint& wpt_end, PathWaypoint& wpt ) {
   Eigen::VectorXd x;
   x = wpt_start.x;
   wpt_start = wpt;

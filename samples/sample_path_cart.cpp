@@ -17,18 +17,18 @@ int main(void) {
   
   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
-  path::CartesianPathConditions pt_start, pt_wpt, pt_end;
+  path::CartesianPathWaypoint pt_start, pt_wpt, pt_end;
   
   sptr< path::CartesianSegment< path::LinearSegment, path::SmoothStep7 > > seg_start, seg_end; 
   sptr< path::CartesianSegment< path::CircularBlend, path::SmoothStep7 > > seg_blend;
   
-  pt_start.position.p  << 0, 0, 0;
-  pt_wpt.position.p    << 1, 0, 0;
-  pt_end.position.p    << 1, 1, 0;
+  pt_start.x.p  << 0, 0, 0;
+  pt_wpt.x.p    << 1, 0, 0;
+  pt_end.x.p    << 1, 1, 0;
   
-  pt_start.position.q  = Eigen::Quaterniond( 1, 0, 0, 0 ); // w, x, y , z
-  pt_wpt.position.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
-  pt_end.position.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
+  pt_start.x.q  = Eigen::Quaterniond( 1, 0, 0, 0 ); // w, x, y , z
+  pt_wpt.x.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
+  pt_end.x.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
   
   path::PathBounds4d path_bounds;
   path_bounds.dx << 1.0, 1.0, 1.0, 0.1;
@@ -37,7 +37,7 @@ int main(void) {
   
   using JoiningSegment_t  = path::CartesianSegment< path::LinearSegment, path::SmoothStep7 >;
   using BlendSegment_t    = path::CartesianSegment< path::CircularBlend, path::SmoothStep7 >;
-  std::vector< path::CartesianPathConditions > waypoints = { pt_start, pt_wpt, pt_end};
+  std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
   std::vector< sptr< path::PathSegment > > segments = path::blendedSegmentsFromCartesianWaypoints< JoiningSegment_t, BlendSegment_t, double>( 
    path_bounds, waypoints, 0.1 );
   path::Path path( segments );

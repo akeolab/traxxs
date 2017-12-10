@@ -26,15 +26,15 @@ bool traxxs::path::PathSegment::init()
   arc::ArcConditions arcconds_start = cond_start_.getArcConditions();
   arc::ArcConditions arcconds_end = cond_end_.getArcConditions();
   double norm;
-  if ( cond_start_.dx.size() > 0 && !cond_start_.dx.hasNaN() ) { // we have a valid desired dx condition
+  if ( cond_start_.pathConditions.dx.size() > 0 && !cond_start_.pathConditions.dx.hasNaN() ) { // we have a valid desired dx condition
     norm = this->getDerivative( 1, 0.0 ).norm();
     if ( norm > constants::kZero ) // we have a not null f'
-      arcconds_start.ds = cond_start_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+      arcconds_start.ds = cond_start_.pathConditions.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
   }
-  if ( cond_end_.dx.size() > 0 && !cond_end_.dx.hasNaN() ) { // we have a valid desired dx condition
+  if ( cond_end_.pathConditions.dx.size() > 0 && !cond_end_.pathConditions.dx.hasNaN() ) { // we have a valid desired dx condition
     norm = this->getDerivative( 1, this->getLength() ).norm();
     if ( norm > constants::kZero ) // we have a not null f'
-      arcconds_end.ds = cond_end_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+      arcconds_end.ds = cond_end_.pathConditions.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
   }
   
   arcconds_start.s = 0;
@@ -77,27 +77,27 @@ bool traxxs::path::StackedSegments::init()
   this->cond_start_.x = this->getConfiguration( 0.0 ); // use the newly implemented interface
   this->cond_end_.x = this->getConfiguration( this->length_ );
   
-  this->cond_start_.dx = Eigen::VectorXd();
+  this->cond_start_.pathConditions.dx = Eigen::VectorXd();
   for ( const auto& seg : segments_ )
-    this->cond_start_.dx = stack( this->cond_start_.dx, seg->cond_start_.dx );
-  this->cond_end_.dx = Eigen::VectorXd();
+    this->cond_start_.pathConditions.dx = stack( this->cond_start_.pathConditions.dx, seg->cond_start_.pathConditions.dx );
+  this->cond_end_.pathConditions.dx = Eigen::VectorXd();
   for ( const auto& seg : segments_ )
-    this->cond_end_.dx = stack( this->cond_end_.dx, seg->cond_end_.dx );
+    this->cond_end_.pathConditions.dx = stack( this->cond_end_.pathConditions.dx, seg->cond_end_.pathConditions.dx );
   
   // now adapt start/end arc conditions
   arc::ArcConditions arcconds_start = cond_start_.getArcConditions();
   arc::ArcConditions arcconds_end = cond_end_.getArcConditions();
   
   double norm;
-  if ( cond_start_.dx.size() > 0 && !cond_start_.dx.hasNaN() ) { // we have a valid desired dx condition
+  if ( cond_start_.pathConditions.dx.size() > 0 && !cond_start_.pathConditions.dx.hasNaN() ) { // we have a valid desired dx condition
     norm = this->getDerivative( 1, 0.0 ).norm();
     if ( norm > constants::kZero ) // we have a not null f'
-      arcconds_start.ds = cond_start_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+      arcconds_start.ds = cond_start_.pathConditions.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
   }
-  if ( cond_end_.dx.size() > 0 && !cond_end_.dx.hasNaN() ) { // we have a valid desired dx condition
+  if ( cond_end_.pathConditions.dx.size() > 0 && !cond_end_.pathConditions.dx.hasNaN() ) { // we have a valid desired dx condition
     norm = this->getDerivative( 1, this->getLength() ).norm();
     if ( norm > constants::kZero ) // we have a not null f'
-      arcconds_end.ds = cond_end_.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
+      arcconds_end.ds = cond_end_.pathConditions.dx.dot( this->getDerivative( 1, 0.0 ) ) / (norm*norm);
   }
   
   arcconds_start.s = 0;
@@ -134,7 +134,7 @@ Eigen::VectorXd traxxs::path::StackedSegments::do_get_derivative_cwise_abs_max(u
 }
 
 
-traxxs::path::LinearSegment::LinearSegment( const PathConditions& start, const PathConditions& end, const PathBounds& bounds )
+traxxs::path::LinearSegment::LinearSegment( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds )
     : PathSegment( start, end, bounds )
 {}
 
@@ -198,7 +198,7 @@ Eigen::VectorXd traxxs::path::LinearSegment::get_derivative_1( double s ) const
 }
 
 
-traxxs::path::SmoothStep7::SmoothStep7( const PathConditions& start, const PathConditions& end, const PathBounds& bounds )
+traxxs::path::SmoothStep7::SmoothStep7( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds )
     : PathSegment( start, end, bounds )
 {}
 
@@ -288,7 +288,7 @@ Eigen::VectorXd traxxs::path::SmoothStep7::get_derivative_3( double s ) const
 }
 
 
-traxxs::path::CircularBlend::CircularBlend( const PathConditions& start, const PathConditions& end, const PathBounds& bounds, 
+traxxs::path::CircularBlend::CircularBlend( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds, 
                               const Eigen::VectorXd& waypoint, 
                               double maxDeviation )
     : BlendSegment< double >( start, end, bounds, waypoint, maxDeviation ),

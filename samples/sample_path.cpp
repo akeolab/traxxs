@@ -25,7 +25,7 @@ int main(void) {
   
   sptr< traxxs::path::PathSegment > seg_start, seg_1_blend, seg_2, seg_3, seg_end;
   
-  traxxs::path::PathConditions wpt_start, wpt_1, wpt_2, wpt_3, wpt_end, wpt_blend_s, wpt_blend_e;
+  traxxs::path::PathWaypoint wpt_start, wpt_1, wpt_2, wpt_3, wpt_end, wpt_blend_s, wpt_blend_e;
   wpt_start.x = Eigen::Vector2d();
   wpt_1.x = Eigen::Vector2d();
   wpt_2.x = Eigen::Vector2d();

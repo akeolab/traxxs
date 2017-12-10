@@ -7,7 +7,7 @@
 namespace traxxs {
 namespace trajectory {
   
-using TrajectoryState = path::PathConditions;
+using TrajectoryState = path::PathWaypoint;
 
 /** 
  * \brief a trajectory object, consisting in a sequence of path segments with corresponding arc generators 

@@ -23,8 +23,8 @@ int main(void) {
   
   sptr< path::PathSegment > stack_seg_start, stack_seg_1_blend, stack_seg_end;
   
-  path::PathConditions wpt_start, wpt_1, wpt_end, wpt_blend_s, wpt_blend_e;
-  path::PathConditions bottom_wpt_start, bottom_wpt_1, bottom_wpt_end;
+  path::PathWaypoint wpt_start, wpt_1, wpt_end, wpt_blend_s, wpt_blend_e;
+  path::PathWaypoint bottom_wpt_start, bottom_wpt_1, bottom_wpt_end;
   wpt_start.x = Eigen::Vector2d();
   wpt_1.x = Eigen::Vector2d();
   wpt_end.x = Eigen::Vector2d();
