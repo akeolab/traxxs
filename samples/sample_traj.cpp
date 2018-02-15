@@ -46,11 +46,11 @@ int main(void) {
   
   for( auto& seg : segments )
     seg->init();
-  path::Path path( segments );
-  path.init();
+  std::shared_ptr< path::Path > path = std::make_shared< path::Path >( segments );
+  path->init();
 
   trajectory::Trajectory trajectory;  
-  trajectory.set< ArcTrajGenSoftMotion >( path.getSegments() );
+  trajectory.set< ArcTrajGenSoftMotion >( path );
   
   int seg_idx;
   trajectory::TrajectoryState state;
