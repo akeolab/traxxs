@@ -34,6 +34,13 @@ class Trajectory {
   
   virtual bool getState( double time, TrajectoryState& state_out, int* idx_out = nullptr );
   virtual bool getArcConditions( double time, arc::ArcConditions& conds_out, std::shared_ptr<path::PathSegment>& segment_out, int* idx_out = nullptr );
+  /**
+   * \brief gets the corresponding segment index at a given time.
+   * \param[in]   time      the virtual time
+   * \param[out]  idx_out   the segment index
+   * \param[out]  time_on_segment_out the time spent on identified segment, will return 
+   */
+  virtual bool getSegmentIndex( double time, int& idx_out, double* time_on_segment_out = nullptr );
   
   /** 
    * \brief triggers the computation for all arc trajectory generators 

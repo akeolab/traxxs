@@ -31,11 +31,29 @@ bool traxxs::trajectory::Trajectory::getState( double time, traxxs::trajectory::
   state_out.pathConditions.ddx = seg->getAcceleration( conds );
   state_out.pathConditions.j   = seg->getJerk( conds );
   
-  return ret;
+  return ret; 
 }
 
 bool traxxs::trajectory::Trajectory::getArcConditions( double time, arc::ArcConditions& conds_out, std::shared_ptr<path::PathSegment>& segment_out, int* idx_out /*= nullptr*/ )
 {
+  bool ret = true;
+  int segment_idx;
+  double time_on_segment;
+  if ( !this->getSegmentIndex( time, segment_idx, &time_on_segment ) )
+    return false;
+  
+  if( idx_out != nullptr )
+    *idx_out = segment_idx;
+  segment_out = this->path_->getSegments()[segment_idx];
+  
+  std::shared_ptr< arc::ArcTrajGen > traj;
+  traj = this->arctrajgens_[segment_idx];
+  ret &= traj->getConditionsAtTime( time_on_segment, conds_out );
+  
+  return ret;
+}
+
+bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out, double* time_on_segment_out /*= nullptr*/ ) {
   if ( this->path_ == nullptr )
     return false;
   bool ret = true;
@@ -63,16 +81,15 @@ bool traxxs::trajectory::Trajectory::getArcConditions( double time, arc::ArcCond
     time_on_segment = std::nan(""); // will be set later
   }
   
-  if( idx_out != nullptr )
-    *idx_out = segment_idx;
-  segment_out = this->path_->getSegments()[segment_idx];
-  
-  traj = this->arctrajgens_[segment_idx];
-  if ( std::isnan( time_on_segment ) ) // in case of "overflow"
+  // in case of "overflow"
+  if ( std::isnan( time_on_segment ) ) { 
+    traj = this->arctrajgens_[segment_idx];
     time_on_segment = traj->getDuration();
+  }
   
-  ret &= traj->getConditionsAtTime( time_on_segment, conds_out );
-  
+  idx_out = segment_idx;
+  if ( time_on_segment_out != nullptr )
+    *time_on_segment_out = time_on_segment;
   return ret;
 }
 
