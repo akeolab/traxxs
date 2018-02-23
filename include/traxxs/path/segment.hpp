@@ -124,6 +124,8 @@ class PathSegment
     sink{ args ... };
   }
   
+  virtual ~PathSegment() {};
+  
  public: // the non-virtual public interface
   
   /** \brief returns the total arc length of the segment */ 
