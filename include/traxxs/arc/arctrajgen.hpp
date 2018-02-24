@@ -38,9 +38,16 @@ class ArcTrajGen
  public: // the non-virtual public interface
   // main
   /** \brief performs some initial setup */
-  virtual bool init() final { return do_init(); }
+  virtual bool init() final { 
+    bool ret = do_init(); 
+    is_computed_ = false;
+    return ret;
+  }
   /** \brief computes the complete profile */
-  virtual bool compute() final { return do_compute(); }
+  virtual bool compute() final { 
+    is_computed_ = do_compute(); 
+    return is_computed_;
+  }
   /** 
    * \brief computes the next conditions from current conditions to the final conditions 
    * \param[in] c_in the current conditions
@@ -55,6 +62,8 @@ class ArcTrajGen
   virtual bool getConditionsAtTime( double t, ArcConditions& c_out ) final { return do_get_conditions_at_time( t, c_out ); }
   /** \brief get the complete duration of a previously computed profile. Returns std::nan() on uncomputed, or error. */
   virtual double getDuration() final { return do_get_duration(); }
+  /** \brief whether or not it is computed. */
+  virtual bool isComputed() final { return this->is_computed_; }
   
   // setters
   virtual void setDt( double dt ) final                               { this->dt_ = dt; }
@@ -91,6 +100,8 @@ protected:
   std::vector< ArcConditions > c_profile_;
   /** \brief the time-discretization step, if any */
   double dt_ = std::nan("");
+  /** \brief whether or not it is computed */
+  bool is_computed_ = false;
 };
 
 } // namespace arc

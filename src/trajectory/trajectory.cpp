@@ -69,7 +69,7 @@ bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out,
   std::shared_ptr< arc::ArcTrajGen > traj;
   for ( unsigned int iseg = 0; iseg < this->path_->getSegments().size(); ++iseg ) {
     traj = this->trajsegments_[iseg]->getArcTrajGen();
-    if ( std::isnan( traj->getDuration() ) )
+    if ( !traj->isComputed() )
       ret &= traj->compute();
     if ( !ret ) {
       std::cerr << "Failed at " << iseg << std::endl;
