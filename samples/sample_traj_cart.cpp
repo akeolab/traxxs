@@ -56,13 +56,16 @@ int main(void) {
     return 1;
   
   int seg_idx;
+  bool is_beyond;
   trajectory::TrajectoryState state;
   arc::ArcConditions conds;
   std::shared_ptr< path::PathSegment > seg;
-  for ( double t = 0; t < 4.0; t+=0.0001 ) {
+  for ( double t = 0; t < 1000.0; t+=0.0001 ) {
     if ( !trajectory.getArcConditions( t, conds, seg, &seg_idx ) )
       break;
-    trajectory.getState( t, state );
+    trajectory.getState( t, state, nullptr, &is_beyond );
+    if ( is_beyond )
+      break;
     std::cout << t << ";" << seg_idx
       << ";" << conds.s << ";" << conds.ds << ";" << conds.dds  << ";" << conds.j 
       << ";" << toCSV( state.x )

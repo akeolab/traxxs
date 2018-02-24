@@ -28,10 +28,11 @@ bool traxxs::trajectory::Trajectory::set( const std::vector< std::shared_ptr< pa
 }
 
 bool traxxs::trajectory::Trajectory::getState( double time, traxxs::trajectory::TrajectoryState& state_out, int* idx_out /*= nullptr*/ )
+bool traxxs::trajectory::Trajectory::getState( double time, traxxs::trajectory::TrajectoryState& state_out, int* idx_out /*= nullptr*/, bool* is_beyond /*= nullptr*/ )
 {
   arc::ArcConditions conds;
   std::shared_ptr<path::PathSegment> seg;
-  bool ret = this->getArcConditions( time, conds, seg, idx_out );
+  bool ret = this->getArcConditions( time, conds, seg, idx_out, is_beyond );
   if( !ret )
     return ret;
   state_out.x   = seg->getPosition( conds );
@@ -42,12 +43,12 @@ bool traxxs::trajectory::Trajectory::getState( double time, traxxs::trajectory::
   return ret; 
 }
 
-bool traxxs::trajectory::Trajectory::getArcConditions( double time, arc::ArcConditions& conds_out, std::shared_ptr<path::PathSegment>& segment_out, int* idx_out /*= nullptr*/ )
+bool traxxs::trajectory::Trajectory::getArcConditions( double time, arc::ArcConditions& conds_out, std::shared_ptr<path::PathSegment>& segment_out, int* idx_out /*= nullptr*/, bool* is_beyond /*= nullptr*/ )
 {
   bool ret = true;
   int segment_idx;
   double time_on_segment;
-  if ( !this->getSegmentIndex( time, segment_idx, &time_on_segment ) )
+  if ( !this->getSegmentIndex( time, segment_idx, &time_on_segment, is_beyond ) )
     return false;
   
   if( idx_out != nullptr )
@@ -59,7 +60,7 @@ bool traxxs::trajectory::Trajectory::getArcConditions( double time, arc::ArcCond
   return ret;
 }
 
-bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out, double* time_on_segment_out /*= nullptr*/ ) {
+bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out, double* time_on_segment_out /*= nullptr*/, bool* is_beyond /*= nullptr*/ ) {
   if ( this->path_ == nullptr )
     return false;
   bool ret = true;
@@ -82,15 +83,15 @@ bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out,
     time_on_segment += -traj->getDuration();
   }
   
+  if ( is_beyond != nullptr )
+      *is_beyond = false;
   if ( segment_idx < 0 ) { // we are further than the last segment
     segment_idx = this->path_->getSegments().size() - 1;
     time_on_segment = std::nan(""); // will be set later
-  }
-  
-  // in case of "overflow"
-  if ( std::isnan( time_on_segment ) ) { 
     traj = this->trajsegments_[segment_idx]->getArcTrajGen();
     time_on_segment = traj->getDuration();
+    if ( is_beyond != nullptr )
+      *is_beyond = true;
   }
   
   idx_out = segment_idx;
