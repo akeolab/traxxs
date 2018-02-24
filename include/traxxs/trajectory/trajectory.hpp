@@ -9,6 +9,22 @@ namespace trajectory {
   
 using TrajectoryState = path::PathWaypoint;
 
+class TrajectorySegment 
+{
+ public: 
+  TrajectorySegment( std::shared_ptr< path::PathSegment >& seg, std::shared_ptr< arc::ArcTrajGen >& traj )
+      : seg_( seg ), traj_( traj ){
+  }
+  virtual ~TrajectorySegment(){};
+  
+ public:
+  std::shared_ptr< path::PathSegment > getPathSegment() const { return this->seg_; };
+  std::shared_ptr< arc::ArcTrajGen > getArcTrajGen() const { return this->traj_; };
+   
+ protected:
+  std::shared_ptr< path::PathSegment > seg_ = nullptr;
+  std::shared_ptr< arc::ArcTrajGen > traj_ = nullptr;
+};
 
 /** 
  * \brief a trajectory object, consisting in a path with arc generators corresponding to the segments of the path
@@ -54,7 +70,7 @@ class Trajectory
    
  protected:
   std::shared_ptr< path::Path > path_ = nullptr;
-  std::vector< std::shared_ptr< arc::ArcTrajGen > > arctrajgens_;
+  std::vector< std::shared_ptr< trajectory::TrajectorySegment > > trajsegments_;
 
 };
 

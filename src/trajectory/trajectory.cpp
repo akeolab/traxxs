@@ -4,20 +4,24 @@ bool traxxs::trajectory::Trajectory::set( const std::vector< std::shared_ptr< pa
 {
   if ( segments.size() != arctrajgens.size() )
     return false;
-  this->arctrajgens_ = arctrajgens;
   /** \todo should we take ownership of the segments to avoid issues ? */
   this->path_ = std::make_shared< path::Path >( segments );
   if ( !this->path_->init() )
     return false;
+  this->trajsegments_.clear();
   
   std::shared_ptr< path::PathSegment > seg;
   std::shared_ptr< arc::ArcTrajGen > traj;
   for ( unsigned int iseg = 0; iseg < this->path_->getSegments().size(); ++iseg ) {
     seg = this->path_->getSegments()[iseg];
-    traj = this->arctrajgens_[iseg];
+    traj = arctrajgens[iseg];
     traj->setInitialConditions( seg->getStartArcConditions() );
     traj->setFinalConditions( seg->getEndArcConditions() );
     traj->setMaxConditions( seg->getArcBounds() );
+    /** \todo should we take ownership of the traj to avoid issues ? */
+    this->trajsegments_.push_back(
+      std::make_shared< TrajectorySegment >( seg, traj )
+    );
   }
   return true;
 }
@@ -49,9 +53,7 @@ bool traxxs::trajectory::Trajectory::getArcConditions( double time, arc::ArcCond
     *idx_out = segment_idx;
   segment_out = this->path_->getSegments()[segment_idx];
   
-  std::shared_ptr< arc::ArcTrajGen > traj;
-  traj = this->arctrajgens_[segment_idx];
-  ret &= traj->getConditionsAtTime( time_on_segment, conds_out );
+  ret &= this->trajsegments_[segment_idx]->getArcTrajGen()->getConditionsAtTime( time_on_segment, conds_out );
   
   return ret;
 }
@@ -65,7 +67,7 @@ bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out,
   double time_on_segment = time;
   std::shared_ptr< arc::ArcTrajGen > traj;
   for ( unsigned int iseg = 0; iseg < this->path_->getSegments().size(); ++iseg ) {
-    traj = this->arctrajgens_[iseg];
+    traj = this->trajsegments_[iseg]->getArcTrajGen();
     if ( std::isnan( traj->getDuration() ) )
       ret &= traj->compute();
     if ( !ret ) {
@@ -86,7 +88,7 @@ bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out,
   
   // in case of "overflow"
   if ( std::isnan( time_on_segment ) ) { 
-    traj = this->arctrajgens_[segment_idx];
+    traj = this->trajsegments_[segment_idx]->getArcTrajGen();
     time_on_segment = traj->getDuration();
   }
   
@@ -110,5 +112,5 @@ bool traxxs::trajectory::Trajectory::computeAtIndex( unsigned int idx )
 {
   if ( idx >= this->path_->getSegments().size() )
     return false;
-  return this->arctrajgens_[idx]->compute();
+  return this->trajsegments_[idx]->getArcTrajGen()->compute();
 }
