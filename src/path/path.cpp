@@ -300,5 +300,6 @@ bool traxxs::path::Path::init()
     }
     cur->setStartArcConditions( arc_cond_start );
   }
+  return true;
 }
 

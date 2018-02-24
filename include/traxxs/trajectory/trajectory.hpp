@@ -15,21 +15,22 @@ using TrajectoryState = path::PathWaypoint;
  * \note the "time" parameter at this level is purely virtual. 
  * \warning Any changes in the segments (their bounds, for example) might disturb this virtual timeline. Moreover, previously computed ArcTrajGens are ignored.
  */
-class Trajectory {
+class Trajectory 
+{
  public:
   Trajectory(){};
   
  public:
    /** \brief sets the trajectory with segments and arc trajectory generators. All trajectory generators will be fed with their respective segment start/end conditions and bounds */
-  virtual bool set( const std::shared_ptr< path::Path >& path, const std::vector< std::shared_ptr< arc::ArcTrajGen > >& arctrajgens );
+  virtual bool set( const std::vector< std::shared_ptr< path::PathSegment > >& segments, const std::vector< std::shared_ptr< arc::ArcTrajGen > >& arctrajgens );
   
   /** \brief sets the trajectory with segments and an arc trajectory class. All trajectory generators will be created with default ctor and will be fed with their respective segment start/end conditions and bounds */
   template < class ArcTrajGen_t >
-  bool set( const std::shared_ptr< path::Path >& path ) {
+  bool set( const std::vector< std::shared_ptr< path::PathSegment > >& segments ) {
     std::vector< std::shared_ptr< arc::ArcTrajGen > > arctrajgens;
-    for ( unsigned int i = 0; i < path->getSegments().size(); ++i )
+    for ( unsigned int i = 0; i < segments.size(); ++i )
       arctrajgens.push_back( std::make_shared< ArcTrajGen_t >() );
-    return this->set( path, arctrajgens );
+    return this->set( segments, arctrajgens );
   }
   
   virtual bool getState( double time, TrajectoryState& state_out, int* idx_out = nullptr );

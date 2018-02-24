@@ -1,11 +1,14 @@
 #include <traxxs/trajectory/trajectory.hpp>
 
-bool traxxs::trajectory::Trajectory::set( const std::shared_ptr< path::Path >& path, const std::vector< std::shared_ptr< arc::ArcTrajGen > >& arctrajgens )
+bool traxxs::trajectory::Trajectory::set( const std::vector< std::shared_ptr< path::PathSegment > >& segments, const std::vector< std::shared_ptr< arc::ArcTrajGen > >& arctrajgens )
 {
-  if ( path->getSegments().size() != arctrajgens.size() )
+  if ( segments.size() != arctrajgens.size() )
     return false;
-  this->path_ = path;
   this->arctrajgens_ = arctrajgens;
+  /** \todo should we take ownership of the segments to avoid issues ? */
+  this->path_ = std::make_shared< path::Path >( segments );
+  if ( !this->path_->init() )
+    return false;
   
   std::shared_ptr< path::PathSegment > seg;
   std::shared_ptr< arc::ArcTrajGen > traj;

@@ -50,12 +50,10 @@ int main(void) {
   std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
   auto segments = path::blendedSegmentsFromWaypoints< path::CartesianPathWaypoint, JoiningSegment_t, BlendSegment_t, double>( 
    path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
-  std::shared_ptr< path::Path > path = std::make_shared< path::Path >( segments );
-  
-  path->init();
   
   trajectory::Trajectory trajectory;
-  trajectory.set< ArcTrajGenSoftMotion >( path );
+  if ( !trajectory.set< ArcTrajGenSoftMotion >( segments ) )
+    return 1;
   
   int seg_idx;
   trajectory::TrajectoryState state;
