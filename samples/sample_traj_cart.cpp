@@ -65,13 +65,25 @@ int main(void) {
   MinMaxAvg<double> minMaxAvg;
   for ( double t = 0; t < 1000.0; t+=0.0001 ) {
     stopwatch.start();
+    
     if ( !trajectory.getArcConditions( t, conds, seg, &seg_idx ) )
       break;
     trajectory.getState( t, state, nullptr, &is_beyond );
-    stopwatch.stop();
-    minMaxAvg.process( stopwatch.get_ms() );
     if ( is_beyond )
       break;
+    
+    static bool has_updated_bounds = false;
+    if ( t < 1.5 && !has_updated_bounds ) {
+      path::PathBounds4d new_path_bounds = path_bounds;
+      //   new_path_bounds.dx << 1.0, 1.0, 1.0, 10.0;
+      new_path_bounds.dx << 0.5, 0.5, 0.5, 2.0;
+      trajectory.setPathBounds( 1.5, new_path_bounds );
+      has_updated_bounds = true;
+    }
+    
+    stopwatch.stop();
+    minMaxAvg.process( stopwatch.get_ms() );
+    
     std::cout << t << ";" << seg_idx
       << ";" << conds.s << ";" << conds.ds << ";" << conds.dds  << ";" << conds.j 
       << ";" << toCSV( state.x )
@@ -79,6 +91,7 @@ int main(void) {
   }
   std::cerr << "Avg: " << minMaxAvg.getAverage() << "ms, min: " << minMaxAvg.getMin() << "ms, max: " << minMaxAvg.getMax() << "ms\n";
   
+  return 0;
   
   
 }
