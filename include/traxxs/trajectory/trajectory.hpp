@@ -48,7 +48,7 @@ class Trajectory
       arctrajgens.push_back( std::make_shared< ArcTrajGen_t >() );
     return this->set( segments, arctrajgens );
   }
-  
+ public: 
   virtual bool getState( double time, TrajectoryState& state_out, int* idx_out = nullptr );
   virtual bool getArcConditions( double time, arc::ArcConditions& conds_out, std::shared_ptr<path::PathSegment>& segment_out, int* idx_out = nullptr );
   /**
@@ -63,10 +63,10 @@ class Trajectory
    * \brief triggers the computation for all arc trajectory generators 
    * to be used if computations are too heavy to be made on-the-fly. Otherwise trajectories will be computed on demand.
    */
-  virtual bool computeAll();
+  virtual bool computeAll( bool force = false );
   
  protected:
-  virtual bool computeAtIndex( unsigned int idx );
+  virtual bool computeAtIndex( unsigned int idx, bool force = false );
    
  protected:
   std::shared_ptr< path::Path > path_ = nullptr;

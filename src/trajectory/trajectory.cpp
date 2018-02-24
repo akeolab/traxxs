@@ -101,17 +101,19 @@ bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out,
 
 
 
-bool traxxs::trajectory::Trajectory::computeAll()
+bool traxxs::trajectory::Trajectory::computeAll( bool force /*= false*/ )
 {
   bool ret = true;
   for ( unsigned int iseg = 0; iseg < this->path_->getSegments().size(); ++iseg )
-    ret &= this->computeAtIndex( iseg );
+    ret &= this->computeAtIndex( iseg, force );
   return ret;
 }
 
-bool traxxs::trajectory::Trajectory::computeAtIndex( unsigned int idx )
+bool traxxs::trajectory::Trajectory::computeAtIndex( unsigned int idx, bool force /*= false*/ )
 {
   if ( idx >= this->path_->getSegments().size() )
     return false;
-  return this->trajsegments_[idx]->getArcTrajGen()->compute();
+  if ( force || !this->trajsegments_[idx]->getArcTrajGen()->isComputed() )
+    return this->trajsegments_[idx]->getArcTrajGen()->compute();
+  return true;
 }
