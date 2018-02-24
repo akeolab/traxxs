@@ -187,6 +187,7 @@ class PathSegment
   virtual bool setStartArcConditions( const arc::ArcConditions& start_arc_conditions ) { return this->cond_start_.setArcConditions( start_arc_conditions ); }
   virtual bool setEndArcConditions( const arc::ArcConditions& end_arc_conditions ) { return this->cond_end_.setArcConditions( end_arc_conditions ); }
   virtual bool setArcBounds( const arc::ArcConditions& arc_bounds ) { this->arc_bounds_ = arc_bounds; return true; }
+  virtual bool setPathBounds( const path::PathBounds& path_bounds ) { this->path_bounds_ = path_bounds; return true; }
  
  protected: // the virtual implementation
   /** \brief implementation of getLength() */
