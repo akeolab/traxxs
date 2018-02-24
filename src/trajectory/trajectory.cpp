@@ -6,6 +6,7 @@ bool traxxs::trajectory::Trajectory::set( const std::vector< std::shared_ptr< pa
     return false;
   /** \todo should we take ownership of the segments to avoid issues ? */
   this->path_ = std::make_shared< path::Path >( segments );
+  /** \todo path_ should be reconstructed on-the-fly, i.e. (sliding) pair (of segments) by pair. */
   if ( !this->path_->init() )
     return false;
   this->trajsegments_.clear();
@@ -65,6 +66,7 @@ bool traxxs::trajectory::Trajectory::setPathBounds(double time, const path::Path
   for ( unsigned int iseg = 0; iseg < this->trajsegments_.size(); ++iseg )
     segments.at( iseg ) = this->trajsegments_[iseg]->getPathSegment();
   this->path_ = std::make_shared< path::Path >( segments );
+  /** \todo path_ should be reconstructed on-the-fly, i.e. (sliding) pair (of segments) by pair. */
   if ( !this->path_->init() )
     return false;
   
