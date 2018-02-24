@@ -67,9 +67,9 @@ class ArcTrajGen
   
   // setters
   virtual void setDt( double dt ) final                               { this->dt_ = dt; }
-  virtual void setInitialConditions( const ArcConditions& c_i ) final { this->c_i_ = c_i; }
-  virtual void setFinalConditions( const ArcConditions& c_f ) final   { this->c_f_ = c_f; }
-  virtual void setMaxConditions( const ArcConditions& c_max ) final   { this->c_max_ = c_max; }
+  virtual void setInitialConditions( const ArcConditions& c_i ) final { this->c_i_ = c_i; this->is_computed_ = false; }
+  virtual void setFinalConditions( const ArcConditions& c_f ) final   { this->c_f_ = c_f; this->is_computed_ = false; }
+  virtual void setMaxConditions( const ArcConditions& c_max ) final   { this->c_max_ = c_max; this->is_computed_ = false; }
   // getters
   virtual double        getDt() final                                 { return this->dt_; }
   virtual ArcConditions getInitialConditions() final                  { return this->c_i_; }

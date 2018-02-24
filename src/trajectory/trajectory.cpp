@@ -72,7 +72,7 @@ bool traxxs::trajectory::Trajectory::setPathBounds(double time, const path::Path
   /** \note we start at iseg since changes in the path normally occur solely starting at iseg+1 (and might reverberate up to iseg and no more)  */
   for ( unsigned int iseg = seg_idx; iseg < this->path_->getSegments().size(); ++iseg ) {
     traj = this->trajsegments_[iseg]->getArcTrajGen();
-    /** \fixme at this point, we just want to state that the ArcTrajGens should be recomputed. Using ArcTrajGen::init() is overkill */
+    /** \fixme at this point, we just want to state that the ArcTrajGens should be recomputed. Using ArcTrajGen::init() is probably overkill */
     traj->init();
     traj->setMaxConditions( this->path_->getSegments()[iseg]->getArcBounds() );
   }
