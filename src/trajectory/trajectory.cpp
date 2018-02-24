@@ -15,6 +15,7 @@ bool traxxs::trajectory::Trajectory::set( const std::vector< std::shared_ptr< pa
   for ( unsigned int iseg = 0; iseg < this->path_->getSegments().size(); ++iseg ) {
     seg = this->path_->getSegments()[iseg];
     traj = arctrajgens[iseg];
+    traj->init();
     traj->setInitialConditions( seg->getStartArcConditions() );
     traj->setFinalConditions( seg->getEndArcConditions() );
     traj->setMaxConditions( seg->getArcBounds() );
