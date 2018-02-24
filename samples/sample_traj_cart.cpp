@@ -60,10 +60,16 @@ int main(void) {
   trajectory::TrajectoryState state;
   arc::ArcConditions conds;
   std::shared_ptr< path::PathSegment > seg;
+  
+  StopWatch stopwatch;
+  MinMaxAvg<double> minMaxAvg;
   for ( double t = 0; t < 1000.0; t+=0.0001 ) {
+    stopwatch.start();
     if ( !trajectory.getArcConditions( t, conds, seg, &seg_idx ) )
       break;
     trajectory.getState( t, state, nullptr, &is_beyond );
+    stopwatch.stop();
+    minMaxAvg.process( stopwatch.get_ms() );
     if ( is_beyond )
       break;
     std::cout << t << ";" << seg_idx
@@ -71,6 +77,7 @@ int main(void) {
       << ";" << toCSV( state.x )
       << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
   }
+  std::cerr << "Avg: " << minMaxAvg.getAverage() << "ms, min: " << minMaxAvg.getMin() << "ms, max: " << minMaxAvg.getMax() << "ms\n";
   
   
   
