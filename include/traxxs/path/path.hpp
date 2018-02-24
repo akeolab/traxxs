@@ -80,8 +80,9 @@ std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromWaypoints( con
 }
 
 /** 
+ * Will compute:
+ * - Arc bounds on each segments with respect to Path bounds on each segments
  * Will ensure:
- * - Arc bounds on each segments are compatible with Path bounds on each segments
  * - Arc start/end conditions ensure dx continuity at all costs, i.e. through dx=0 if needed.
  * - Arc start/end conditions ensure ddx and dddx continuity if possible
  */
@@ -91,7 +92,7 @@ class Path
   Path( std::vector< std::shared_ptr < PathSegment > > segments );
  public:
   virtual bool init();
-  virtual const std::vector< std::shared_ptr < PathSegment > >& getSegments() { return this->segments_; };
+  virtual const std::vector< std::shared_ptr < PathSegment > >& getSegments() const { return this->segments_; };
  protected: 
   std::vector< std::shared_ptr < PathSegment > > segments_;
 };
