@@ -27,7 +27,52 @@ bool traxxs::trajectory::Trajectory::set( const std::vector< std::shared_ptr< pa
   return true;
 }
 
-bool traxxs::trajectory::Trajectory::getState( double time, traxxs::trajectory::TrajectoryState& state_out, int* idx_out /*= nullptr*/ )
+bool traxxs::trajectory::Trajectory::setPathBounds(double time, const path::PathBounds& path_bounds)
+{
+  bool ret = true;
+  // find the segment at time, and the conditions on this segment
+  int seg_idx;
+  double time_on_segment;
+  arc::ArcConditions conds_at_time;
+  if ( !this->getSegmentIndex( time, seg_idx, &time_on_segment ) )
+    return false;
+  if ( !this->trajsegments_[seg_idx]->getArcTrajGen()->getConditionsAtTime( time_on_segment, conds_at_time ) )
+    return false;
+  // split the segment in two segments: one with the previous bounds until conds_at_time.s, the other with the new bounds from conds_at_time.s
+  arc::ArcConditions start, middle, end;
+  std::shared_ptr< arc::ArcTrajGen > traj = this->trajsegments_[seg_idx]->getArcTrajGen();
+  std::shared_ptr< arc::ArcTrajGen > new_traj( traj.get()->clone() );
+  std::shared_ptr< path::PathSegment > new_path( this->trajsegments_[seg_idx]->getPathSegment().get()->clone() );
+  start = traj->getInitialConditions();
+  end = traj->getFinalConditions();
+  middle = conds_at_time;
+  traj->setFinalConditions( middle );
+  new_traj->setInitialConditions( middle );
+  // set the new path_bounds to the newly created path and further
+  new_path->setPathBounds( path_bounds );
+  for ( unsigned int iseg = seg_idx+1; iseg < this->path_->getSegments().size(); ++iseg ) 
+    this->trajsegments_[seg_idx]->getPathSegment()->setPathBounds( path_bounds );
+  // insert the new segment
+  this->trajsegments_.insert( this->trajsegments_.begin() + seg_idx+1, std::make_shared< TrajectorySegment >( new_path, new_traj ) );
+  // then rebuild the path
+  std::vector< std::shared_ptr< path::PathSegment > > segments(this->trajsegments_.size());
+  for ( unsigned int iseg = 0; iseg < this->trajsegments_.size(); ++iseg )
+    segments.at( iseg ) = this->trajsegments_[iseg]->getPathSegment();
+  this->path_ = std::make_shared< path::Path >( segments );
+  if ( !this->path_->init() )
+    return false;
+  
+  std::shared_ptr< path::PathSegment > seg;
+  for ( unsigned int iseg = seg_idx; iseg < this->path_->getSegments().size(); ++iseg ) {
+    seg = this->path_->getSegments()[iseg];
+    traj = this->trajsegments_[iseg]->getArcTrajGen();
+    traj->init();
+    traj->setMaxConditions( seg->getArcBounds() );
+  }
+  return ret;
+}
+
+
 bool traxxs::trajectory::Trajectory::getState( double time, traxxs::trajectory::TrajectoryState& state_out, int* idx_out /*= nullptr*/, bool* is_beyond /*= nullptr*/ )
 {
   arc::ArcConditions conds;

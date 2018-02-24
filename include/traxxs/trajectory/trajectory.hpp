@@ -48,6 +48,10 @@ class Trajectory
       arctrajgens.push_back( std::make_shared< ArcTrajGen_t >() );
     return this->set( segments, arctrajgens );
   }
+  
+ public:
+  virtual bool setPathBounds( double time, const path::PathBounds& path_bounds );
+   
  public: 
   virtual bool getState( double time, TrajectoryState& state_out, int* idx_out = nullptr, bool* is_beyond = nullptr );
   virtual bool getArcConditions( double time, arc::ArcConditions& conds_out, std::shared_ptr<path::PathSegment>& segment_out, int* idx_out = nullptr, bool* is_beyond = nullptr );
