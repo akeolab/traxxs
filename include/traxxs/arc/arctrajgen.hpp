@@ -29,9 +29,10 @@ std::ostream& operator<<(std::ostream& os, const ArcConditions& obj);
 /** 
  * \brief An abstract trajectory generator interface over arc length 
  */
-class ArcTrajGen 
+class ArcTrajGen
 {
  public:
+  virtual ArcTrajGen* clone() const = 0;
   virtual ~ArcTrajGen() = default;
   
  public: // the non-virtual public interface

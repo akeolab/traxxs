@@ -1,11 +1,12 @@
 #include <SCurveProfile.hpp>
 #include <traxxs/arc/arc.hpp>
+#include <traxxs/crtp.hpp>
 #include <cmath>
 
 /**
  * \brief an ArcTrajGen implementation using SCurve
  */
-class ArcTrajGenSCurve : public traxxs::arc::ArcTrajGen {
+class ArcTrajGenSCurve : public traxxs::Cloneable< traxxs::arc::ArcTrajGen, ArcTrajGenSCurve > {
   
  protected: // the implementation
   virtual bool do_init() override;
