@@ -1,6 +1,35 @@
 
 #include <sstream>
 #include <chrono>
+#include <limits>
+
+template < class T >
+struct MinMaxAvg
+{
+  MinMaxAvg() { this->reset(); }
+  void reset() {
+    count_ = 0;
+    min_ = std::numeric_limits< T >::infinity();
+    max_ = -std::numeric_limits< T >::infinity();
+    sum_ = 0;
+  }
+  
+  void process( T value ) {
+    min_ = std::min( min_, value );
+    max_ = std::max( max_, value );
+    sum_ += value;
+    count_++;
+  }
+  
+  const T& getMin() const { return this->min_; };
+  const T& getMax() const { return this->max_; };
+  T getAverage() const { if ( count_ <= 0 ) return std::nan(""); return this->sum_ * 1.0 / this->count_; };
+  
+ protected:
+  long unsigned int count_;
+  T min_, max_, sum_;
+};
+
 
 template < class T >
 std::string toCSV(const T& obj) { 
