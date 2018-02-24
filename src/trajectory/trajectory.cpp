@@ -42,7 +42,8 @@ bool traxxs::trajectory::Trajectory::setPathBounds(double time, const path::Path
   arc::ArcConditions start, middle, end;
   std::shared_ptr< arc::ArcTrajGen > traj = this->trajsegments_[seg_idx]->getArcTrajGen();
   std::shared_ptr< arc::ArcTrajGen > new_traj( traj.get()->clone() );
-  std::shared_ptr< path::PathSegment > new_path( this->trajsegments_[seg_idx]->getPathSegment().get()->clone() );
+  std::shared_ptr< path::PathSegment > path = this->trajsegments_[seg_idx]->getPathSegment();
+  std::shared_ptr< path::PathSegment > new_path( path.get()->clone() );
   start = traj->getInitialConditions();
   end = traj->getFinalConditions();
   middle = conds_at_time;
@@ -50,6 +51,10 @@ bool traxxs::trajectory::Trajectory::setPathBounds(double time, const path::Path
   new_traj->setInitialConditions( middle );
   // set the new path_bounds to the newly created path and further
   new_path->setPathBounds( path_bounds );
+  // update the start/end arc conditions
+  new_path->setStartArcConditions( middle );
+  new_path->setEndArcConditions( end );
+  path->setEndArcConditions( middle );
   for ( unsigned int iseg = seg_idx+1; iseg < this->path_->getSegments().size(); ++iseg ) 
     this->trajsegments_[seg_idx]->getPathSegment()->setPathBounds( path_bounds );
   // insert the new segment
@@ -66,6 +71,7 @@ bool traxxs::trajectory::Trajectory::setPathBounds(double time, const path::Path
   for ( unsigned int iseg = seg_idx; iseg < this->path_->getSegments().size(); ++iseg ) {
     seg = this->path_->getSegments()[iseg];
     traj = this->trajsegments_[iseg]->getArcTrajGen();
+    /** \fixme at this point, we just want to state that the ArcTrajGens should be recomputed. Using ArcTrajGen::init() is overkill */
     traj->init();
     traj->setMaxConditions( seg->getArcBounds() );
   }
