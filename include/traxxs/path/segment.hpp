@@ -10,6 +10,7 @@
 #include "data.hpp"
 #include <traxxs/arc/arc.hpp>
 #include <traxxs/constants.hpp>
+#include <traxxs/crtp.hpp>
 
 namespace traxxs {
 namespace path {
@@ -100,7 +101,7 @@ struct PathBounds4d : PathBounds
 
 class StackedSegments;
 
-class PathSegment 
+class PathSegment
 {
   friend class StackedSegments;
   
@@ -123,6 +124,10 @@ class PathSegment
       : PathSegment( start, end, bounds ) {
     sink{ args ... };
   }
+  
+  virtual ~PathSegment() {};
+  
+  virtual PathSegment* clone() const = 0;
   
  public: // the non-virtual public interface
   
@@ -182,6 +187,7 @@ class PathSegment
   virtual bool setStartArcConditions( const arc::ArcConditions& start_arc_conditions ) { return this->cond_start_.setArcConditions( start_arc_conditions ); }
   virtual bool setEndArcConditions( const arc::ArcConditions& end_arc_conditions ) { return this->cond_end_.setArcConditions( end_arc_conditions ); }
   virtual bool setArcBounds( const arc::ArcConditions& arc_bounds ) { this->arc_bounds_ = arc_bounds; return true; }
+  virtual bool setPathBounds( const path::PathBounds& path_bounds ) { this->path_bounds_ = path_bounds; return true; }
  
  protected: // the virtual implementation
   /** \brief implementation of getLength() */
@@ -223,6 +229,9 @@ class BlendSegment : public PathSegment
     (void) waypoint;
     sink{ args ... };
   }
+  
+  virtual BlendSegment* clone() const override = 0;
+  
  public: 
   virtual bool init() override {
     // store the effective start/end conditions 
@@ -239,7 +248,7 @@ class BlendSegment : public PathSegment
  * \warning \todo start/end arcConditions from segments are ignored for now, and left undefined
  * \warning all derived classes should call init_stack() in their constructor
  */
-class StackedSegments : public PathSegment
+class StackedSegments : public Cloneable< PathSegment, StackedSegments >
 {
  public:
   StackedSegments(){};
@@ -261,7 +270,7 @@ class StackedSegments : public PathSegment
 };
 
 
-class LinearSegment : public PathSegment
+class LinearSegment : public Cloneable< PathSegment, LinearSegment >
 {
  public:
   LinearSegment( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds );
@@ -282,7 +291,7 @@ class LinearSegment : public PathSegment
  * A 7-th order Smoothstep segment, with first three derivatives null at start and end
  * Arc length is between 0 and 1 
  */
-class SmoothStep7 : public PathSegment 
+class SmoothStep7 : public Cloneable< PathSegment, SmoothStep7 > 
 {
  public:
   SmoothStep7( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds );
@@ -307,7 +316,7 @@ class SmoothStep7 : public PathSegment
  * \warning the segment will not start at start nor end at end points !
  * \note ddx continuity will not be ensured with a linear segment, except if dds = 0
  */ 
-class CircularBlend : public BlendSegment< double >
+class CircularBlend : public Cloneable< BlendSegment< double >, CircularBlend >
 {
  public:
   /**
@@ -345,7 +354,7 @@ class CircularBlend : public BlendSegment< double >
 };
 
 
-class CartesianSegmentBase : public StackedSegments 
+class CartesianSegmentBase : public Cloneable< StackedSegments, CartesianSegmentBase >
 {
  public:
   CartesianSegmentBase(){};
@@ -356,6 +365,7 @@ class CartesianSegmentBase : public StackedSegments
   */
   CartesianSegmentBase( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
                         const Pose& start, const Pose& end );
+  
  public:
   virtual bool set( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
                         const Pose& start, const Pose& end );
@@ -371,14 +381,14 @@ class CartesianSegmentBase : public StackedSegments
   std::shared_ptr< PathSegment > segment_pos_;
   std::shared_ptr< PathSegment >  segment_or_;
   /** \brief the start point of the cartesian segment */
-    Pose cart_start_;
+  Pose cart_start_;
   /** \brief the end point of the cartesian segment */
-    Pose cart_end_;
+  Pose cart_end_;
   Eigen::AngleAxisd or_trans_; // the transformation from cart_start_.q to cart_end_.q
 };
 
 template< class PosSegment_t, class OrSegment_t >
-class CartesianSegment : public CartesianSegmentBase 
+class CartesianSegment : public Cloneable< CartesianSegmentBase, CartesianSegment< PosSegment_t, OrSegment_t > > 
 {
  public:
   /**
@@ -414,7 +424,7 @@ class CartesianSegment : public CartesianSegmentBase
     ret &= this->init_cartesian_post();
     
     // now do the rest of the setup
-    ret &= CartesianSegmentBase::set( segment_pos_, segment_or_, start_.x, end_.x );
+    ret &= CartesianSegmentBase::set( this->segment_pos_, this->segment_or_, start_.x, end_.x );
     ret &= CartesianSegmentBase::init();
     
     return ret;
@@ -433,13 +443,13 @@ class CartesianSegment : public CartesianSegmentBase
     pos_end.pathConditions= end_.pathConditionsPosition; 
     
     // extract start/end for orientation segment (parameterizes the angle solely)
-    or_trans_ = Eigen::AngleAxisd( end_.x.q * start_.x.q.inverse() );
+    this->or_trans_ = Eigen::AngleAxisd( end_.x.q * start_.x.q.inverse() );
     
     or_start = PathWaypoint( 1 );
     or_end = PathWaypoint( 1 );
     or_start.x << 0.0;
     or_start.pathConditions = start_.pathConditionsOrientation;
-    or_end.x << or_trans_.angle();
+    or_end.x << this->or_trans_.angle();
     or_end.pathConditions = end_.pathConditionsOrientation;
     
     // extract bounds for position segment
@@ -462,8 +472,8 @@ class CartesianSegment : public CartesianSegmentBase
     
     // the same with orientations
     Eigen::Quaterniond start_orig_q = start_.x.q;
-    start_.x.q = Eigen::AngleAxisd( this->segment_or_->getConfiguration( 0.0 )[0], or_trans_.axis() ) * start_orig_q ; 
-    end_.x.q = Eigen::AngleAxisd( this->segment_or_->getConfiguration( this->segment_or_->getLength() )[0], or_trans_.axis() ) * start_orig_q ; 
+    start_.x.q = Eigen::AngleAxisd( this->segment_or_->getConfiguration( 0.0 )[0], this->or_trans_.axis() ) * start_orig_q ; 
+    end_.x.q = Eigen::AngleAxisd( this->segment_or_->getConfiguration( this->segment_or_->getLength() )[0], this->or_trans_.axis() ) * start_orig_q ; 
     
     return true;
   }

@@ -135,7 +135,7 @@ Eigen::VectorXd traxxs::path::StackedSegments::do_get_derivative_cwise_abs_max(u
 
 
 traxxs::path::LinearSegment::LinearSegment( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds )
-    : PathSegment( start, end, bounds )
+    : Cloneable< PathSegment, LinearSegment >( start, end, bounds )
 {}
 
 bool traxxs::path::LinearSegment::init()
@@ -199,7 +199,7 @@ Eigen::VectorXd traxxs::path::LinearSegment::get_derivative_1( double s ) const
 
 
 traxxs::path::SmoothStep7::SmoothStep7( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds )
-    : PathSegment( start, end, bounds )
+    : Cloneable< PathSegment, SmoothStep7 >( start, end, bounds )
 {}
 
 bool traxxs::path::SmoothStep7::init() 
@@ -291,7 +291,7 @@ Eigen::VectorXd traxxs::path::SmoothStep7::get_derivative_3( double s ) const
 traxxs::path::CircularBlend::CircularBlend( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds, 
                               const Eigen::VectorXd& waypoint, 
                               double maxDeviation )
-    : BlendSegment< double >( start, end, bounds, waypoint, maxDeviation ),
+    : Cloneable< BlendSegment< double >, CircularBlend >( start, end, bounds, waypoint, maxDeviation ),
       i_waypoint_( waypoint ), i_max_deviation_( maxDeviation )
 {}
 

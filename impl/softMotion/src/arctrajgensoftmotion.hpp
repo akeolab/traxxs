@@ -1,5 +1,6 @@
 #include <softMotion.h>
 #include <traxxs/arc/arc.hpp>
+#include <traxxs/crtp.hpp>
 #include <cmath>
 
 
@@ -41,7 +42,7 @@ using SmTraj_t = SmTrajWrapper;
 /**
  * \brief an ArcTrajGen implementation using softMotion
  */
-class ArcTrajGenSoftMotion : public traxxs::arc::ArcTrajGen 
+class ArcTrajGenSoftMotion : public traxxs::Cloneable< traxxs::arc::ArcTrajGen, ArcTrajGenSoftMotion >
 {
  protected: // the implementation
   virtual bool do_init() override;
