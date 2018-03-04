@@ -459,7 +459,7 @@ bool traxxs::path::CartesianSegmentBase::init()
 
 Eigen::VectorXd traxxs::path::CartesianSegmentBase::getPosition( const arc::ArcConditions& arc_conditions ) const {
   Eigen::VectorXd v4d = this->getConfiguration( arc_conditions.s );
-    Pose p;
+  Pose p;
   p.p = v4d.segment( 0, 3 );
   /** \todo check that if v4d[3] == 0 => q = cart_start_.q AND v4d[3] = or_trans_.angle() => q = cart_end_.q */
   p.q = Eigen::AngleAxisd( v4d[3], or_trans_.axis() ) * cart_start_.q ; 

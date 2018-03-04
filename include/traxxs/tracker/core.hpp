@@ -16,6 +16,13 @@ enum class TrackerStatus
     Finished    
 };
 
+enum class TrackerValidatorStatus
+{
+    Failure         = -1,
+    Error           = 0,
+    Success         = 1
+};
+
 /** 
  * \brief An abstract Tracker interface 
  */
