@@ -39,6 +39,9 @@ int main(void) {
   
   StopWatch stopwatch;
   MinMaxAvg<double> minMaxAvg;
+  
+  std::cout << "{" << std::endl;
+  std::cout << "\"data\": [" << std::endl;
   for ( double t = 0; t < 1000.0; t+=0.0001 ) {
     stopwatch.start();
     
@@ -60,11 +63,11 @@ int main(void) {
     stopwatch.stop();
     minMaxAvg.process( stopwatch.get_ms() );
     
-    std::cout << t << ";" << seg_idx
-      << ";" << conds.s << ";" << conds.ds << ";" << conds.dds  << ";" << conds.j 
-      << ";" << toCSV( state.x )
-      << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
+    std::cout << "{" << trajectoryFrameToJSON( t, seg_idx, conds, state ) << "}," << std::endl;
   }
+  std::cout << "{} ]" << std::endl;
+  std::cout << "}" << std::endl;
+  
   std::cerr << "Avg: " << minMaxAvg.getAverage() << "ms, min: " << minMaxAvg.getMin() << "ms, max: " << minMaxAvg.getMax() << "ms\n";
   
   return 0;

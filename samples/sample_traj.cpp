@@ -54,15 +54,16 @@ int main(void) {
   trajectory::TrajectoryState state;
   arc::ArcConditions conds;
   std::shared_ptr< path::PathSegment > seg;
+  std::cout << "{" << std::endl;
+  std::cout << "\"data\": [" << std::endl;
   for ( double t = 0; t < 2.5; t+=0.0001 ) {
     if ( !trajectory.getArcConditions( t, conds, seg, &seg_idx ) )
       break;
     trajectory.getState( t, state );
-    std::cout << t << ";" << seg_idx
-      << ";" << conds.s << ";" << conds.ds << ";" << conds.dds  << ";" << conds.j 
-      << ";" << toCSV( state.x )
-      << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
+    std::cout << "{" << trajectoryFrameToJSON( t, seg_idx, conds, state ) << "}," << std::endl;
   }
+  std::cout << "{} ]" << std::endl;
+  std::cout << "}" << std::endl;
   
   
   

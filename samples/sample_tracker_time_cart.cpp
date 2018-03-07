@@ -29,7 +29,7 @@ int main(void) {
   if ( !trajectory->set< ArcTrajGenSoftMotion >( segments ) )
     return 1;
   
-  trajectory::TrajectoryState state;
+  trajectory::TrajectoryState state, state_new;
   arc::ArcConditions conds;
   std::shared_ptr< path::PathSegment > seg;
   
@@ -39,10 +39,15 @@ int main(void) {
   
   double dt = 0.0001;
   double t = 0 - dt;
+  // initial state
+  trajectory->getState( 0.0, state);
+  state.x[0] += 1.0; // add some offset to initial state
   
+  std::cout << "{" << std::endl;
+  std::cout << "\"data\": [" << std::endl;
   for ( unsigned int i = 0; i < 1000000; ++i ) {
     t += dt;
-    status = tracker.next( dt, state, state );
+    status = tracker.next( dt, state, state_new );
     if ( status == tracker::TrackerStatus::Error ) {
       std::cerr << "Tracker error.\n";
       break;
@@ -50,11 +55,13 @@ int main(void) {
     if ( status == tracker::TrackerStatus::Finished )
       break;
     
-    std::cout << t << ";" << 0
-      << ";" << 0 << ";" << 0 << ";" << 0  << ";" << 0 
-      << ";" << toCSV( state.x )
-      << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
+    // fake system+controller dynamics: slow translation tracking
+    dummySystemTranslationKp( state_new, state );
+    
+    std::cout << "{" << trajectoryFrameToJSON( t, state, state_new ) << "}," << std::endl;
   }
+  std::cout << "{} ]" << std::endl;
+  std::cout << "}" << std::endl;
   
   return 0;
   

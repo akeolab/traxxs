@@ -1,7 +1,7 @@
 
-#include <sstream>
 #include <chrono>
 #include <limits>
+#include "samples_helpers_io.hpp"
 
 template < class T >
 struct MinMaxAvg
@@ -31,15 +31,6 @@ struct MinMaxAvg
 };
 
 
-template < class T >
-std::string toCSV(const T& obj) { 
-  std::stringstream ss;
-  for ( unsigned int i = 0; i < obj.size() ; ++i ) {
-    ss << obj[i];
-    if ( i != obj.size() -1 ) ss << ";";
-  }
-  return ss.str();
-}
 
 class StopWatch 
 {
@@ -57,3 +48,12 @@ class StopWatch
   std::chrono::time_point<std::chrono::steady_clock> t_begin_, t_end_;
   
 };
+
+void dummySystemTranslationKp( const traxxs::trajectory::TrajectoryState& desired_state, traxxs::trajectory::TrajectoryState& current_state, double Kp = 0.05 )
+{
+  traxxs::trajectory::TrajectoryState state_tmp;
+  state_tmp = current_state;
+  current_state = desired_state;
+  current_state.x.segment(0,3) = state_tmp.x.segment(0,3);
+  current_state.x.segment(0,3) += Kp * ( desired_state.x.segment(0,3) - state_tmp.x.segment(0,3) );
+}

@@ -25,13 +25,13 @@ int main(void) {
   path_bounds.ddx = 10.0 * path_bounds.dx;
   path_bounds.j = 10.0 * path_bounds.ddx;
   
-  auto segments = createSegmentsForCartesianTrajectory_Square( path_bounds );
+  auto segments = createSegmentsForCartesianTrajectory_CornerBlend( path_bounds );
   
   auto trajectory = std::make_shared< trajectory::Trajectory >();
   if ( !trajectory->set< ArcTrajGenSoftMotion >( segments ) )
     return 1;
   
-  trajectory::TrajectoryState state, state_new, state_tmp;
+  trajectory::TrajectoryState state, state_new;
   arc::ArcConditions conds;
   std::shared_ptr< path::PathSegment > seg;
   
@@ -45,7 +45,9 @@ int main(void) {
   // initial state
   trajectory->getState( 0.0, state);
   state.x[0] += 1.0; // add some offset to initial state
-
+  
+  std::cout << "{" << std::endl;
+  std::cout << "\"data\": [" << std::endl;
   for ( unsigned int i = 0; i < 20.0/dt; ++i ) {
     t += dt;
     status = tracker.next( dt, state, state_new );
@@ -57,16 +59,12 @@ int main(void) {
       break;
     
     // fake system+controller dynamics: slow translation tracking
-    state_tmp = state;
-    state = state_new;
-    state.x.segment(0,3) = state_tmp.x.segment(0,3);
-    state.x.segment(0,3) += 0.05 * ( state_new.x.segment(0,3) - state_tmp.x.segment(0,3) );
+    dummySystemTranslationKp( state_new, state );
     
-    std::cout << t << ";" << 0
-      << ";" << 0 << ";" << 0 << ";" << 0  << ";" << 0 
-      << ";" << toCSV( state.x )
-      << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
+    std::cout << "{" << trajectoryFrameToJSON( t, state, state_new ) << "}," << std::endl;
   }
+  std::cout << "{} ]" << std::endl;
+  std::cout << "}" << std::endl;
   
   return 0;
   
