@@ -6,7 +6,7 @@ int main(void) {
   traxxs::arc::ArcConditions c_i, c_f, c_max;
   traxxs::arc::ArcConditions c_cur;
   
-  double dt = 0.1;
+  double dt = 0.05;
   
   c_i.s = 0;
   c_i.ds = 2.5;

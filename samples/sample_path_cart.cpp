@@ -47,11 +47,11 @@ int main(void) {
   arc::ArcConditions tmp;
   for ( auto& seg : segments ) {
     tmp.s = 0.0;
-    std::cout << "from:\t"  << path::Pose( seg->getPosition(tmp) ).p.transpose() << "\n\t" 
-                              << path::Pose( seg->getPosition(tmp) ).q.coeffs().transpose() <<  "\n" ;
+    std::cout << "from:\t"  << path::Pose().fromVector( seg->getPosition(tmp) )->p.transpose() << "\n\t" 
+                              << path::Pose().fromVector( seg->getPosition(tmp) )->q.coeffs().transpose() <<  "\n" ;
     tmp.s = seg->getLength();
-    std::cout << "to:\t"    << path::Pose( seg->getPosition(tmp) ).p.transpose() << "\n\t" 
-                              << path::Pose( seg->getPosition(tmp) ).q.coeffs().transpose() <<  "\n" ;
+    std::cout << "to:\t"    << path::Pose().fromVector( seg->getPosition(tmp) )->p.transpose() << "\n\t" 
+                              << path::Pose().fromVector( seg->getPosition(tmp) )->q.coeffs().transpose() <<  "\n" ;
   }
   
 }

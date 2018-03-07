@@ -72,6 +72,11 @@ int main(void) {
   Eigen::VectorXd x_m, x_p, dx_m, dx_p, ddx_m, ddx_p, j_m, j_p;
   traxxs::arc::ArcConditions conds_m, conds_p;
   
+  for ( unsigned int iseg=0; iseg<segments.size(); ++iseg ) {
+    cur = segments[iseg];
+    std::cout << "Segment " << iseg << " :\nfrom\t" << cur->getStartArcConditions() << "\nto\t" << cur->getEndArcConditions() << std::endl;
+  }
+  
   // check continuity
   for ( unsigned int iseg=1; iseg<segments.size(); ++iseg ) {
     cur = segments[iseg];

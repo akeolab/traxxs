@@ -31,3 +31,9 @@ target_link_libraries(sample_traj traxxs arctrajgensoftmotion)
 
 add_executable( sample_traj_cart sample_traj_cart.cpp )
 target_link_libraries(sample_traj_cart traxxs arctrajgensoftmotion)
+
+add_executable( sample_tracker_time_cart sample_tracker_time_cart.cpp )
+target_link_libraries(sample_tracker_time_cart traxxs arctrajgensoftmotion)
+
+add_executable( sample_tracker_space_cart sample_tracker_space_cart.cpp )
+target_link_libraries(sample_tracker_space_cart traxxs arctrajgensoftmotion)

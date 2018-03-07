@@ -372,6 +372,7 @@ class CartesianSegmentBase : public Cloneable< StackedSegments, CartesianSegment
   virtual bool init() override;
                         
  public: // the interface implementation
+  /** \brief returns the position in 7d-vector form, see traxxs::path::Pose::toVector() */
   virtual Eigen::VectorXd getPosition( const arc::ArcConditions& arc_conditions ) const override;
   virtual Eigen::VectorXd getVelocity( const arc::ArcConditions& arc_conditions ) const override;
   virtual Eigen::VectorXd getAcceleration( const arc::ArcConditions& arc_conditions ) const override;
