@@ -9,6 +9,7 @@
 #include <traxxs/tracker/tracker.hpp>
 #include "arctrajgensoftmotion.hpp"
 #include "samples_helpers.hpp"
+#include "samples_helpers_cart.hpp"
 
 template< class T >
 using sptr = std::shared_ptr<T>;
@@ -19,33 +20,12 @@ int main(void) {
   
 //   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
-  path::CartesianPathWaypoint pt_start, pt_wpt, pt_end;
-  
-  pt_start.x.p  << 0, 0, 0;
-  pt_wpt.x.p    << 1, 0, 0;
-  pt_end.x.p    << 1, 1, 0;
-  
-  pt_start.x.q  = Eigen::Quaterniond( 1, 0, 0, 0 ); // w, x, y , z
-  pt_wpt.x.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
-  pt_end.x.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
-  
-  pt_start.pathConditionsPosition.dx << 0, 0, 0;
-  pt_start.pathConditionsOrientation.dx << 0;
-  
-  pt_end.pathConditionsPosition.dx << 0, 0, 0;
-  pt_end.pathConditionsOrientation.dx << 0;
-  
   path::PathBounds4d path_bounds;
   path_bounds.dx << 1.0, 1.0, 1.0, 10.0;
   path_bounds.ddx = 10.0 * path_bounds.dx;
   path_bounds.j = 10.0 * path_bounds.ddx;
   
-  using JoiningSegment_t  = path::CartesianSegment< path::LinearSegment, path::SmoothStep7 >;
-  using BlendSegment_t    = path::CartesianSegment< path::CircularBlend, path::SmoothStep7 >;
-
-  std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
-  auto segments = path::blendedSegmentsFromWaypoints< path::CartesianPathWaypoint, JoiningSegment_t, BlendSegment_t, double>( 
-   path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
+  auto segments = createSegmentsForCartesianTrajectory_Square( path_bounds );
   
   auto trajectory = std::make_shared< trajectory::Trajectory >();
   if ( !trajectory->set< ArcTrajGenSoftMotion >( segments ) )
@@ -64,7 +44,7 @@ int main(void) {
   double t = 0 - dt;
   // initial state
   trajectory->getState( 0.0, state);
-  state.x[0] += 1.0;
+  state.x[0] += 1.0; // add some offset to initial state
 
   for ( unsigned int i = 0; i < 20.0/dt; ++i ) {
     t += dt;

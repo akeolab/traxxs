@@ -9,6 +9,7 @@
 #include <traxxs/trajectory/trajectory.hpp>
 #include "arctrajgensoftmotion.hpp"
 #include "samples_helpers.hpp"
+#include "samples_helpers_cart.hpp"
 
 template< class T >
 using sptr = std::shared_ptr<T>;
@@ -19,40 +20,15 @@ int main(void) {
   
 //   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
-  path::CartesianPathWaypoint pt_start, pt_wpt, pt_end;
-  
-  pt_start.x.p  << 0, 0, 0;
-  pt_wpt.x.p    << 1, 0, 0;
-  pt_end.x.p    << 1, 1, 0;
-  
-  pt_start.x.q  = Eigen::Quaterniond( 1, 0, 0, 0 ); // w, x, y , z
-  pt_wpt.x.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
-  pt_end.x.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
-  
-  pt_start.pathConditionsPosition.dx << 0, 0, 0;
-  pt_start.pathConditionsOrientation.dx << 0;
-  
-//   // force arriving at the waypoint with null velocity to ensure acceleration continuity
-//   pt_wpt.pathConditionsPosition.dx << 0, 0, 0;
-//   pt_wpt.pathConditionsOrientation.dx << 0;
-  
-  pt_end.pathConditionsPosition.dx << 0, 0, 0;
-  pt_end.pathConditionsOrientation.dx << 0;
-  
   path::PathBounds4d path_bounds;
   path_bounds.dx << 1.0, 1.0, 1.0, 10.0;
   path_bounds.ddx = 10.0 * path_bounds.dx;
   path_bounds.j = 10.0 * path_bounds.ddx;
   
-  using JoiningSegment_t  = path::CartesianSegment< path::LinearSegment, path::SmoothStep7 >;
-  using BlendSegment_t    = path::CartesianSegment< path::CircularBlend, path::SmoothStep7 >;
-
-  std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
-  auto segments = path::blendedSegmentsFromWaypoints< path::CartesianPathWaypoint, JoiningSegment_t, BlendSegment_t, double>( 
-   path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
+  auto segments = createSegmentsForCartesianTrajectory_CornerBlend( path_bounds );
   
-  trajectory::Trajectory trajectory;
-  if ( !trajectory.set< ArcTrajGenSoftMotion >( segments ) )
+  auto trajectory = std::make_shared< trajectory::Trajectory >();
+  if ( !trajectory->set< ArcTrajGenSoftMotion >( segments ) )
     return 1;
   
   int seg_idx;
@@ -66,9 +42,9 @@ int main(void) {
   for ( double t = 0; t < 1000.0; t+=0.0001 ) {
     stopwatch.start();
     
-    if ( !trajectory.getArcConditions( t, conds, seg, &seg_idx ) )
+    if ( !trajectory->getArcConditions( t, conds, seg, &seg_idx ) )
       break;
-    trajectory.getState( t, state, nullptr, &is_beyond );
+    trajectory->getState( t, state, nullptr, &is_beyond );
     if ( is_beyond )
       break;
     
@@ -77,7 +53,7 @@ int main(void) {
       path::PathBounds4d new_path_bounds = path_bounds;
       //   new_path_bounds.dx << 1.0, 1.0, 1.0, 10.0;
       new_path_bounds.dx << 0.5, 0.5, 0.5, 2.0;
-      trajectory.setPathBounds( 1.5, new_path_bounds );
+      trajectory->setPathBounds( 1.5, new_path_bounds );
       has_updated_bounds = true;
     }
     
