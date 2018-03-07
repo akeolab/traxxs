@@ -1,0 +1,6 @@
+[submodule "external/soft_motion/soft-motion-libs"]
+	path = external/soft_motion/soft-motion-libs
+	url = https://git.openrobots.org/robots/softmotion/soft-motion-libs.git
+[submodule "external/scurve_traj_gen/scurve_traj_gen"]
+	path = external/scurve_traj_gen/scurve_traj_gen
+	url = https://github.com/JimmyDaSilva/scurve_traj_gen
