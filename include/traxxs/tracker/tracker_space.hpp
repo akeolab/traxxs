@@ -54,15 +54,19 @@ class TrackerSpacePursuit : public TrackerBase
     if ( this->validator_ == nullptr )
       return TrackerStatus::NotInitialized;
     
-    if ( this->prev_output_ != nullptr ) {
-      TrackerValidatorStatus ret_valid = this->validator_->validate( dt, current_state, *prev_output_.get() );
-      if ( ret_valid != TrackerValidatorStatus::Success ) {
-        if ( ret_valid == TrackerValidatorStatus::Failure ) {
+    if ( this->prev_output_ == nullptr ) {
+      trajectory::TrajectoryState init_state;
+      this->trajectory_->getState( this->current_virtual_t_, init_state );
+      this->prev_output_ = std::make_shared< trajectory::TrajectoryState > ( init_state );
+    }
+    TrackerValidatorStatus ret_valid = this->validator_->validate( dt, current_state, *prev_output_.get() );
+    // test if the validator validates the increment
+    if ( ret_valid != TrackerValidatorStatus::Success ) {
+      if ( ret_valid == TrackerValidatorStatus::Failure ) { // if failure, we stall !
           new_state_out = *prev_output_.get();
           return TrackerStatus::Stalled;
-        } else {
-          return TrackerStatus::Error;
-        }
+      } else { // this is neither a success nor a failure, i.e. an error !
+        return TrackerStatus::Error;
       }
     }
     bool ret = this->trajectory_->getState( this->current_virtual_t_ + dt, new_state_out, nullptr, &is_beyond );
@@ -70,7 +74,7 @@ class TrackerSpacePursuit : public TrackerBase
       return TrackerStatus::Error;
     
     // store it for next validation
-    prev_output_.reset( &new_state_out );
+    prev_output_ = std::make_shared< trajectory::TrajectoryState > ( new_state_out );
     
     // if beyond
     /** \todo should we check for "is_beyond" BEFORE checking for "stalled" (i.e. validation) ? */
