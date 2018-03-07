@@ -47,8 +47,8 @@ int main(void) {
   auto segments = path::blendedSegmentsFromWaypoints< path::CartesianPathWaypoint, JoiningSegment_t, BlendSegment_t, double>( 
    path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
   
-  trajectory::Trajectory trajectory;
-  if ( !trajectory.set< ArcTrajGenSoftMotion >( segments ) )
+  auto trajectory = std::make_shared< trajectory::Trajectory >();
+  if ( !trajectory->set< ArcTrajGenSoftMotion >( segments ) )
     return 1;
   
   trajectory::TrajectoryState state;
@@ -57,11 +57,13 @@ int main(void) {
   
   tracker::TrackerStatus status;
   tracker::TrackerTimePursuit tracker;
-  tracker.reset( std::make_shared<trajectory::Trajectory>( trajectory ) );
+  tracker.reset( trajectory );
   
   double dt = 0.0001;
+  double t = 0 - dt;
   
   for ( unsigned int i = 0; i < 1000000; ++i ) {
+    t += dt;
     status = tracker.next( dt, state, state );
     if ( status == tracker::TrackerStatus::Error ) {
       std::cerr << "Tracker error.\n";
@@ -70,7 +72,7 @@ int main(void) {
     if ( status == tracker::TrackerStatus::Finished )
       break;
     
-    std::cout << tracker.getVirtualTime() << ";" << 0
+    std::cout << t << ";" << 0
       << ";" << 0 << ";" << 0 << ";" << 0  << ";" << 0 
       << ";" << toCSV( state.x )
       << ";" << toCSV( state.pathConditions.dx ) << ";" << toCSV( state.pathConditions.ddx ) << ";" << toCSV( state.pathConditions.j ) << std::endl;
