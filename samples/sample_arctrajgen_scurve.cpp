@@ -33,6 +33,9 @@
 #include <iostream>
 #include <traxxs/impl/traxxs_scurve/traxxs_scurve.hpp>
 
+/**
+ * Demonstrates the scurve_traj_gen implementation of traxxs::arc::ArcTrajGen
+ */
 int main(void) {
   ArcTrajGenSCurve arcTrajGen;
   traxxs::arc::ArcConditions c_i, c_f, c_max;

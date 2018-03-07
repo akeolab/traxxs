@@ -31,7 +31,7 @@
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 /**
- * \todo
+ * a Cartesian trajectory demonstration with "online" change of path bounds
  */
 
 #include <iostream>
@@ -52,13 +52,16 @@ int main(void) {
   
 //   std::cout << std::setprecision(3) << std::fixed << std::showpos ;
   
+  // define the path bounds
   path::PathBounds4d path_bounds;
   path_bounds.dx << 1.0, 1.0, 1.0, 10.0;
   path_bounds.ddx = 10.0 * path_bounds.dx;
   path_bounds.j = 10.0 * path_bounds.ddx;
   
+  // create the segments
   auto segments = createSegmentsForCartesianTrajectory_CornerBlend( path_bounds );
   
+  // create a trajectory on these segments using the softmotion implementation
   auto trajectory = std::make_shared< trajectory::Trajectory >();
   if ( !trajectory->set< ArcTrajGenSoftMotion >( segments ) )
     return 1;
@@ -74,21 +77,29 @@ int main(void) {
   
   std::cout << "{" << std::endl;
   std::cout << "\"data\": [" << std::endl;
+  
+  // now explore the trajectory
   for ( double t = 0; t < 1000.0; t+=0.0001 ) {
     stopwatch.start();
     
+    // get the arc conditions at that time
     if ( !trajectory->getArcConditions( t, conds, seg, &seg_idx ) )
       break;
+    // get the state at that time
     trajectory->getState( t, state, nullptr, &is_beyond );
     if ( is_beyond )
       break;
     
+    // at some point in time, we decide to change the path bounds
     static bool has_updated_bounds = false;
-    if ( t < 1.5 && !has_updated_bounds ) {
+    if ( t > 1.5 && !has_updated_bounds ) {
+      // define new path bounds
       path::PathBounds4d new_path_bounds = path_bounds;
       //   new_path_bounds.dx << 1.0, 1.0, 1.0, 10.0;
       new_path_bounds.dx << 0.5, 0.5, 0.5, 2.0;
-      trajectory->setPathBounds( 1.5, new_path_bounds );
+      // set them on the trajectory, starting at time t
+      trajectory->setPathBounds( t, new_path_bounds );
+      // store the fact that we performed the update
       has_updated_bounds = true;
     }
     

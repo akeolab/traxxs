@@ -72,11 +72,11 @@ class TrackerSpaceValidator
  * by the input dt until the end of the trajectory is met.
  * TrackerSpacePursuit::next() will return TrackerStatus::Stalled if the increment is not validated, and new_state_out will be equal to the previously output state
  */
-class TrackerSpacePursuit : public TrackerBase
+class TrackerSpacePursuit : public Tracker
 {
  public:
   TrackerSpacePursuit( const std::shared_ptr< TrackerSpaceValidator >& validator ) 
-      : TrackerBase(), validator_( validator ) {};
+      : Tracker(), validator_( validator ) {};
   
  protected:
   virtual TrackerStatus do_next( double dt, const trajectory::TrajectoryState& current_state, trajectory::TrajectoryState& new_state_out ) override {

@@ -49,7 +49,6 @@ using namespace traxxs;
 
 int main(void) {
   
-  
   sptr< path::PathSegment > top_seg_start, top_seg_1_blend, top_seg_end;
   sptr< path::PathSegment > bottom_seg_start, bottom_seg_1_blend, bottom_seg_end;
   

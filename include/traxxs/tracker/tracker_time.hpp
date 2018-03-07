@@ -43,10 +43,10 @@ namespace tracker {
  * Simply, the tracker keeps track of the virtual time.
  * On every call to TrackerTimePursuit::next(), the virtual time will be incremented by the input dt until the end of the trajectory is met
  */
-class TrackerTimePursuit : public TrackerBase
+class TrackerTimePursuit : public Tracker
 {
  public:
-  TrackerTimePursuit() : TrackerBase() {};
+  TrackerTimePursuit() : Tracker() {};
   
  protected:
   virtual TrackerStatus do_next( double dt, const trajectory::TrajectoryState& current_state, trajectory::TrajectoryState& new_state_out ) override {

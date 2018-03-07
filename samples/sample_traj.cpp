@@ -31,7 +31,7 @@
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 /**
- * \todo
+ * A simple trajectory demonstration
  */
 
 #include <iostream>

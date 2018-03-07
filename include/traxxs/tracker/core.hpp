@@ -40,12 +40,12 @@ namespace tracker {
 
 enum class TrackerStatus
 {
-    Undefined       = -1,
-    Error           = 0,
-    NotInitialized  , 
-    Stalled         ,
-    Incremented     ,
-    Finished    
+    Undefined       = -1, // not defined
+    Error           = 0,  // an error occurred at the tracker or trajectory level
+    NotInitialized  ,     // unitialized status
+    Stalled         ,     // the trajectory is stalling, i.e. we did not increment
+    Incremented     ,     // the trajectory has been incremented: we got a new desired state
+    Finished              // the end of the trajectory has been reached
 };
 
 enum class TrackerValidatorStatus
@@ -58,11 +58,11 @@ enum class TrackerValidatorStatus
 /** 
  * \brief An abstract Tracker interface 
  */
-class TrackerBase
+class Tracker
 {
  public:
-  TrackerBase(){};
-  virtual ~TrackerBase(){};
+  Tracker(){};
+  virtual ~Tracker(){};
  
  public: // the non-virtual public interface
   /**

@@ -33,6 +33,9 @@
 #include <iostream>
 #include <traxxs/impl/traxxs_softmotion/traxxs_softmotion.hpp>
 
+/**
+ * Demonstrates the softMotion implementation of traxxs::arc::ArcTrajGen
+ */
 int main(void) {
   ArcTrajGenSoftMotion arcTrajGen;
   traxxs::arc::ArcConditions c_i, c_f, c_max;
@@ -40,6 +43,7 @@ int main(void) {
   
   double dt = 0.05;
   
+  // create an arc with initial/final conditions and bounds
   c_i.s = 0;
   c_i.ds = 2.5;
   c_i.dds = 0.0;
@@ -57,11 +61,13 @@ int main(void) {
   arcTrajGen.setFinalConditions( c_f );
   arcTrajGen.setMaxConditions( c_max );
   
+  // compute the entire trajectory
   if ( !arcTrajGen.compute() ) { 
     std::cerr << "Compute failed." << std::endl;
     return 1;
   }
   
+  // explore the trajectory
   std::cout << "From " << c_i << "  to " << c_f << " s.t. " << c_max << std::endl;
   std::cout << "Duration : " << arcTrajGen.getDuration() << std::endl;
   for ( double t = 0; t <= arcTrajGen.getDuration() + dt ; t += dt ) {

@@ -2,6 +2,22 @@
 
 A framework to create and manage trajectories.
 
+## The philosophy
+
+Three motivations behing this framework:
+
+* lack of unified description of trajectory management (I have a trajectory to follow, I am at a given state. What should I take from my trajectory?)
+* unclear distinction between trajectories and paths (and account for path properties, such as curvature, to infer trajectory bounds w.r.t. e.g. Cartesian bounds)
+* few multi-axis trajectory generators (make use of a 1D generator to synchronize multiple axes)
+
+Five main objects are defined within this framework:
+
+* `traxxs::path::PathSegment` : a path segment, defining a mapping between arc coordinates (any 1D parameterization of a path) and "real" coordinates
+* `traxxs::path::Path`: a complete path, i.e. a consistent (continuous) list of path segments
+* `traxxs::arc::ArcTrajGen`: a 1D trajectory generator. Multiple implementations can be added. Is used to define trajectory on arc coordinates.
+* `traxxs::trajectory::Trajectory`: an object coupling a Path to an ArcTrajGen
+* `traxxs::tracker::Tracker`: a tracker object managing a Trajectory. Provides a new desired state with respect to a trajectory and the current state. Multiple implementations.
+
 ## Dependencies
 
 * Eigen 3
@@ -59,4 +75,5 @@ Example usage:
 
 ## ToDos
 
-* Check consistency of use of const reference passing of `shared_ptr`
+* Check consistency of use of const reference passing of `shared_ptr`.
+* Extend to multi-axis trajectory generators

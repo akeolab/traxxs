@@ -31,7 +31,7 @@
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 /**
- * \todo
+ * Demonstrates a TrackerTimePursuit tracker
  */
 
 #include <iostream>
@@ -61,17 +61,21 @@ int main(void) {
   if ( !trajectory->set< ArcTrajGenSoftMotion >( segments ) )
     return 1;
   
+  // the current system state and desired (from trajectory) system state
   trajectory::TrajectoryState state, state_new;
   arc::ArcConditions conds;
   std::shared_ptr< path::PathSegment > seg;
   
+  // the status of the tracker
   tracker::TrackerStatus status;
+  // the tracker itself
   tracker::TrackerTimePursuit tracker;
+  // feed the trajectory to the tracker
   tracker.reset( trajectory );
   
   double dt = 0.0001;
   double t = 0 - dt;
-  // initial state
+  // set the system initial state and store it into 'state'
   trajectory->getState( 0.0, state);
   state.x[0] += 1.0; // add some offset to initial state
   
@@ -79,14 +83,18 @@ int main(void) {
   std::cout << "\"data\": [" << std::endl;
   for ( unsigned int i = 0; i < 1000000; ++i ) {
     t += dt;
+    // ask the tracker what we should be the next system state according to the current state and to the trajectory
     status = tracker.next( dt, state, state_new );
+    // if the tracker fails
     if ( status == tracker::TrackerStatus::Error ) {
       std::cerr << "Tracker error.\n";
       break;
     }
+    // if the tracker states that we reached the end of the trajectory
     if ( status == tracker::TrackerStatus::Finished )
       break;
     
+    // otherwise, we proceed
     // fake system+controller dynamics: slow translation tracking
     dummySystemTranslationKp( state_new, state );
     
