@@ -39,7 +39,7 @@
 #include <memory>
 
 #include <traxxs/tracker/tracker.hpp>
-#include "arctrajgensoftmotion.hpp"
+#include <traxxs/impl/traxxs_softmotion/traxxs_softmotion.hpp>
 #include "samples_helpers.hpp"
 #include "samples_helpers_cart.hpp"
 

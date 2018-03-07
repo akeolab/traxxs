@@ -30,7 +30,7 @@
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-#include "arctrajgensoftmotion.hpp"
+#include <traxxs/impl/traxxs_softmotion/traxxs_softmotion.hpp>
 
 #include <stdexcept>
 

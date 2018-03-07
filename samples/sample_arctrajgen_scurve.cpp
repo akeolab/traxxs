@@ -31,7 +31,7 @@
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 #include <iostream>
-#include <arctrajgenscurve.hpp>
+#include <traxxs/impl/traxxs_scurve/traxxs_scurve.hpp>
 
 int main(void) {
   ArcTrajGenSCurve arcTrajGen;

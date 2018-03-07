@@ -30,7 +30,7 @@
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-#include "arctrajgenscurve.hpp"
+#include <traxxs/impl/traxxs_scurve/traxxs_scurve.hpp>
 
 #include <stdexcept>
 

@@ -13,12 +13,12 @@ if( USE_TG_SCURVETRAJGEN )
   target_link_libraries(sample_lib_scurveprofile SCurveProfile)
 
   add_executable( sample_arctrajgen_scurve sample_arctrajgen_scurve.cpp )
-  target_link_libraries(sample_arctrajgen_scurve arctrajgenscurve)
+  target_link_libraries(sample_arctrajgen_scurve traxxs_scurve)
 endif()
 
 if( USE_TG_SOFTMOTION )
   add_executable( sample_arctrajgen_softmotion sample_arctrajgen_softmotion.cpp )
-  target_link_libraries(sample_arctrajgen_softmotion arctrajgensoftmotion)
+  target_link_libraries(sample_arctrajgen_softmotion traxxs_softmotion)
 endif()
 
 add_executable( sample_path sample_path.cpp )
@@ -32,14 +32,14 @@ target_link_libraries(sample_path_cart traxxs)
 
 if( USE_TG_SOFTMOTION )
   add_executable( sample_traj sample_traj.cpp )
-  target_link_libraries(sample_traj traxxs arctrajgensoftmotion)
+  target_link_libraries(sample_traj traxxs traxxs_softmotion)
 
   add_executable( sample_traj_cart sample_traj_cart.cpp )
-  target_link_libraries(sample_traj_cart traxxs arctrajgensoftmotion)
+  target_link_libraries(sample_traj_cart traxxs traxxs_softmotion)
 
   add_executable( sample_tracker_time_cart sample_tracker_time_cart.cpp )
-  target_link_libraries(sample_tracker_time_cart traxxs arctrajgensoftmotion)
+  target_link_libraries(sample_tracker_time_cart traxxs traxxs_softmotion)
 
   add_executable( sample_tracker_space_cart sample_tracker_space_cart.cpp )
-  target_link_libraries(sample_tracker_space_cart traxxs arctrajgensoftmotion)
+  target_link_libraries(sample_tracker_space_cart traxxs traxxs_softmotion)
 endif()

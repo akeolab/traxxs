@@ -31,7 +31,7 @@
 // knowledge of the CeCILL-C license and that you accept its terms.
 
 #include <iostream>
-#include <arctrajgensoftmotion.hpp>
+#include <traxxs/impl/traxxs_softmotion/traxxs_softmotion.hpp>
 
 int main(void) {
   ArcTrajGenSoftMotion arcTrajGen;
