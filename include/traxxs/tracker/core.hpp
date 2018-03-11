@@ -30,29 +30,40 @@
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
+/**
+ * \file include/traxxs/tracker/core.hpp
+ */
+
 #ifndef TRAXXS_TRACKER_CORE_H
 #define TRAXXS_TRACKER_CORE_H
 
 #include <traxxs/trajectory/trajectory.hpp>
 
+
 namespace traxxs {
 namespace tracker {
 
+/**
+ * \brief  a traxxs::tracker::Tracker return status
+ */
 enum class TrackerStatus
 {
-    Undefined       = -1, // not defined
-    Error           = 0,  // an error occurred at the tracker or trajectory level
-    NotInitialized  ,     // unitialized status
-    Stalled         ,     // the trajectory is stalling, i.e. we did not increment
-    Incremented     ,     // the trajectory has been incremented: we got a new desired state
-    Finished              // the end of the trajectory has been reached
+  Undefined       = -1,     /**< status not defined */
+  Error                 = 0,     /**< an error occurred at the tracker or trajectory level */
+  NotInitialized  ,           /**< unitialized status */
+  Stalled         ,               /**< the trajectory is stalling, i.e. we did not increment */
+  Incremented     ,         /**< the trajectory has been incremented: we got a new desired state */
+  Finished                      /**< the end of the trajectory has been reached */
 };
 
+/**
+ * \brief a traxxs::tracker::TrackerSpaceValidator return status
+ */
 enum class TrackerValidatorStatus
 {
-    Failure         = -1,
-    Error           = 0,
-    Success         = 1
+  Failure          = -1,    /**< Invalidated */
+  Error             = 0,      /**< Error occured during validation */
+  Success        = 1       /**< Validated */
 };
 
 /** 

@@ -32,6 +32,12 @@ Five main objects are defined within this framework:
 sudo apt-get install libeigen3-dev
 ```
 
+#### softMotion
+`softMotion` depends on libxml2
+```bash
+sudo apt-get install libxml2-dev
+```
+
 ## Installation
 
 ```bash

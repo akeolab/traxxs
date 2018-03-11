@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.0.2)
 
 set( LIB_NAME "softMotion" )
 
+# softmotion lib is not compatible with c++11 and above
+# cf. As of C++11, iostream classes are no longer implicitly convertible to void*
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++03")
 
 set( SOURCE_FILES
   soft-motion-libs/src/Sm_Approx.cpp

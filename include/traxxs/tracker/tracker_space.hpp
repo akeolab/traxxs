@@ -70,7 +70,7 @@ class TrackerSpaceValidator
  * On every call to TrackerSpacePursuit::next(), the virtual time will be incremented,
  * if and only if the provided TrackerSpaceValidator validates the new state w.r.t. the previously output state.
  * by the input dt until the end of the trajectory is met.
- * TrackerSpacePursuit::next() will return TrackerStatus::Stalled if the increment is not validated, and new_state_out will be equal to the previously output state
+ * TrackerSpacePursuit::next() will return traxxs::tracker::TrackerStatus::Stalled if the increment is not validated, and new_state_out will be equal to the previously output state
  */
 class TrackerSpacePursuit : public Tracker
 {

@@ -61,7 +61,9 @@ Eigen::VectorXd stack( const Eigen::VectorXd& vec_top, const Eigen::VectorXd& ve
  */
 struct sink { template<typename ...Args> sink(Args const & ... ) {} };
 
-
+/**
+ * \brief conditions on a path
+ */
 struct PathConditions 
 {
   PathConditions( unsigned int sz = 0 ) {
@@ -97,6 +99,9 @@ struct PathWaypoint
   arc::ArcConditions arc_conditions_;
 };
 
+/**
+ * \brief a Cartesian path waypoint
+ */
 struct CartesianPathWaypoint
 {
   Pose x;
@@ -104,6 +109,9 @@ struct CartesianPathWaypoint
   PathConditions pathConditionsOrientation = PathConditions( 1 );
 };
 
+/**
+ * \brief path bounds
+ */
 struct PathBounds
 {
   PathBounds( unsigned int sz = 0 ) {
@@ -133,6 +141,9 @@ struct PathBounds4d : PathBounds
 
 class StackedSegments;
 
+/**
+ * \brief a path segment
+ */
 class PathSegment
 {
   friend class StackedSegments;
@@ -244,7 +255,7 @@ class PathSegment
 };
 
 /**
- * A blend segment computes by itself its start and end conditions position
+ * \brief A blend segment computes by itself its start and end conditions position
  * \note start and end conditions position are not guaranteed to be equal to start and end parameters for blends.
  * \warning Derived classes should take care of resetting start/end conditions to the newly computed values
  */
@@ -274,7 +285,7 @@ class BlendSegment : public PathSegment
 };
 
 /** 
- * A stacked segments stacks multiple segments.
+ * \brief A stacked segments stacks multiple segments.
  * New unit arc variable u is used, u \in [0, 1]
  * stacked->getLength() = 1.0
  * \warning \todo start/end arcConditions from segments are ignored for now, and left undefined
@@ -302,6 +313,9 @@ class StackedSegments : public Cloneable< PathSegment, StackedSegments >
 };
 
 
+/**
+ * \brief a Linear segment
+ */
 class LinearSegment : public Cloneable< PathSegment, LinearSegment >
 {
  public:
@@ -320,7 +334,7 @@ class LinearSegment : public Cloneable< PathSegment, LinearSegment >
 };
 
 /**
- * A 7-th order Smoothstep segment, with first three derivatives null at start and end
+ * \brief A 7-th order Smoothstep segment, with first three derivatives null at start and end
  * Arc length is between 0 and 1 
  */
 class SmoothStep7 : public Cloneable< PathSegment, SmoothStep7 > 
@@ -344,7 +358,7 @@ class SmoothStep7 : public Cloneable< PathSegment, SmoothStep7 >
 
 
 /** 
- * A circular segment tangent to [start,waypoint] and [waypoint, end]. Serves as a corner blend.
+ * \brief A circular segment tangent to [start,waypoint] and [waypoint, end]. Serves as a corner blend.
  * \warning the segment will not start at start nor end at end points !
  * \note ddx continuity will not be ensured with a linear segment, except if dds = 0
  */ 
@@ -386,6 +400,9 @@ class CircularBlend : public Cloneable< BlendSegment< double >, CircularBlend >
 };
 
 
+/**
+ * \brief a Cartesian segment  abstract class, derived from StackedSegments 
+ */
 class CartesianSegmentBase : public Cloneable< StackedSegments, CartesianSegmentBase >
 {
  public:
@@ -420,6 +437,9 @@ class CartesianSegmentBase : public Cloneable< StackedSegments, CartesianSegment
   Eigen::AngleAxisd or_trans_; // the transformation from cart_start_.q to cart_end_.q
 };
 
+/**
+ * \brief a Cartesian segment, consisting of templated position and orientation segments
+ */
 template< class PosSegment_t, class OrSegment_t >
 class CartesianSegment : public Cloneable< CartesianSegmentBase, CartesianSegment< PosSegment_t, OrSegment_t > > 
 {
