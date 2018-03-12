@@ -15,10 +15,10 @@ target_include_directories( ${PROJECT_NAME} PUBLIC
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC
   ${TRAXXS_LIB_NAME}
-  SCurveProfile
+  PRIVATE SCurveProfile
 )
 
-install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+install(TARGETS ${PROJECT_NAME} DESTINATION lib EXPORT traxxsTargets)
 
 install(DIRECTORY include/
   DESTINATION ${CMAKE_INSTALL_PREFIX}/include

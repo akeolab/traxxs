@@ -30,9 +30,22 @@
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
+#include <softMotion.h>
+
 #include <traxxs/impl/traxxs_softmotion/traxxs_softmotion.hpp>
 
 #include <stdexcept>
+
+class SmTrajWrapper;
+
+// using SmTraj_t = SM_TRAJ;
+using SmTraj_t = SmTrajWrapper;
+
+bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_COND& c_out );
+bool toSoftMotion( const traxxs::arc::ArcConditions& c_in, SM_LIMITS& c_out );
+
+bool fromSoftMotion( const SM_COND& c_in, traxxs::arc::ArcConditions& c_out, double time = std::nan("") );
+bool fromSoftMotion( const SM_LIMITS& limits_in, traxxs::arc::ArcConditions& c_out, double time = std::nan("") );
 
 bool toSoftMotion(const traxxs::arc::ArcConditions& c_in, SM_COND& c_out)
 {
@@ -73,6 +86,30 @@ bool fromSoftMotion( const SM_LIMITS& limits_in, traxxs::arc::ArcConditions& c_o
     c_out.t = time;
   return true;
 }
+
+/** 
+ * \brief This wrapper adds an "out-of-bounds" feature to SM_TRAJ
+ * Indeed, SM_TRAJ alone does not handle cases where initial conditions do not respect bounds.
+ */
+class SmTrajWrapper 
+{
+ public:
+  SmTrajWrapper();
+
+ public:
+  int computeTraj( std::vector<SM_COND> IC, std::vector<SM_COND> FC, std::vector<SM_LIMITS> limits, SM_TRAJ::SM_TRAJ_MODE mode );
+  int getMotionCond( double time, std::vector<SM_COND> & cond );
+  double getDuration();
+  
+ protected:
+  SM_TRAJ sm_traj_;  
+  SM_TRAJ brake_sm_traj_;
+  double brake_duration_ = 0.0;
+  /** \brief the ICs from the parameters */
+  SM_COND ic_;
+  /** \brief the ICs used by the SM_TRAJ, i.e. after braking (if needed) */
+  SM_COND ic_smtraj_;
+};
 
 SmTrajWrapper::SmTrajWrapper()
 {
@@ -142,12 +179,17 @@ double SmTrajWrapper::getDuration()
 
 
 
-
+struct ArcTrajGenSoftMotion::impl {
+  impl();
+  SmTraj_t sm_traj_;
+  bool sm_traj_compute( ArcTrajGenSoftMotion* parent, SmTraj_t& traj, const std::vector<SM_COND>& c_i );
+  bool sm_traj_conditions_at_time( ArcTrajGenSoftMotion* parent, SmTraj_t& traj, double time, std::vector<SM_COND>& c_out );
+};
 
 
 bool ArcTrajGenSoftMotion::do_init()
 {
-  this->sm_traj_ = SmTraj_t();
+  impl_ = std::make_shared< ArcTrajGenSoftMotion::impl > ();
 }
 
 bool ArcTrajGenSoftMotion::do_compute()
@@ -159,12 +201,12 @@ bool ArcTrajGenSoftMotion::do_compute()
   std::vector< SM_COND > c_i_s;
   c_i_s.push_back( c_i );
   if ( ret )
-    ret &= this->sm_traj_compute( this->sm_traj_, c_i_s );
+    ret &= this->impl_->sm_traj_compute( this, this->impl_->sm_traj_, c_i_s );
   
   if ( !ret )
     this->duration_ = std::nan("");
   else
-    this->duration_ = this->sm_traj_.getDuration();
+    this->duration_ = this->impl_->sm_traj_.getDuration();
   
   return ret;
 }
@@ -179,10 +221,10 @@ bool ArcTrajGenSoftMotion::do_compute_next_conditions( const traxxs::arc::ArcCon
     return false;
   std::vector< SM_COND > c_i_s{ c_i };
   
-  if ( !this->sm_traj_compute( traj, c_i_s ) )
+  if ( !this->impl_->sm_traj_compute( this, traj, c_i_s ) )
     return false;
   std::vector< SM_COND > conds;
-  if ( !this->sm_traj_conditions_at_time( traj, this->dt_, conds ) )
+  if ( !this->impl_->sm_traj_conditions_at_time( this, traj, this->dt_, conds ) )
     return false;
   if ( !fromSoftMotion( conds[0], c_out ) )
     return false;
@@ -196,7 +238,7 @@ bool ArcTrajGenSoftMotion::do_get_conditions_at_time( double t, traxxs::arc::Arc
   if ( std::isnan( this->getDuration() ) )
     return false;
   std::vector< SM_COND > conds;
-  if ( !this->sm_traj_conditions_at_time( this->sm_traj_, t, conds ) )
+  if ( !this->impl_->sm_traj_conditions_at_time( this, this->impl_->sm_traj_, t, conds ) )
     return false;
   if ( !fromSoftMotion( conds[0], c_out, t ) )
     return false;
@@ -209,8 +251,12 @@ double ArcTrajGenSoftMotion::do_get_duration()
   return this->duration_;
 }
 
+ArcTrajGenSoftMotion::impl::impl() 
+{
+  this->sm_traj_ = SmTraj_t();
+}
 
-bool ArcTrajGenSoftMotion::sm_traj_compute( SmTraj_t& traj, const std::vector<SM_COND>& c_i )
+bool ArcTrajGenSoftMotion::impl::sm_traj_compute( ArcTrajGenSoftMotion* parent, SmTraj_t& traj, const std::vector<SM_COND>& c_i )
 {
   /** 
    * \todo check for nans in conditions and limits
@@ -220,8 +266,8 @@ bool ArcTrajGenSoftMotion::sm_traj_compute( SmTraj_t& traj, const std::vector<SM
   SM_COND c_f;
   SM_LIMITS c_max;
   
-  ret &= toSoftMotion( this->c_f_, c_f );
-  ret &= toSoftMotion( this->c_max_, c_max );
+  ret &= toSoftMotion( parent->c_f_, c_f );
+  ret &= toSoftMotion( parent->c_max_, c_max );
   if ( ret ) {
     std::vector<SM_COND> c_f_s{ c_f };
     std::vector<SM_LIMITS> c_max_s{ c_max };
@@ -232,9 +278,9 @@ bool ArcTrajGenSoftMotion::sm_traj_compute( SmTraj_t& traj, const std::vector<SM
   return ret;
 }
 
-bool ArcTrajGenSoftMotion::sm_traj_conditions_at_time( SmTraj_t& traj, double time, std::vector<SM_COND>& c_out )
+bool ArcTrajGenSoftMotion::impl::sm_traj_conditions_at_time( ArcTrajGenSoftMotion* parent, SmTraj_t& traj, double time, std::vector<SM_COND>& c_out )
 {
-  int cret = traj.getMotionCond( std::min( std::max( time, 0.0 ), this->getDuration() ), c_out );
+  int cret = traj.getMotionCond( std::min( std::max( time, 0.0 ), parent->getDuration() ), c_out );
   return (cret == SM_STATUS::SM_OK);
 }
 

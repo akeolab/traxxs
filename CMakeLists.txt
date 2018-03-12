@@ -44,3 +44,41 @@ if( BUILD_DOC )
     message("Doxygen need to be installed to generate the doxygen documentation")
   endif (DOXYGEN_FOUND)
 endif( BUILD_DOC )
+
+#
+# CMake package
+#
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/traxxsConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY AnyNewerVersion
+)
+
+set(CONFIG_PACKAGE_LOCATION share/cmake/traxxs)
+set(INCLUDE_INSTALL_DIR include/ )
+
+configure_package_config_file(cmake/traxxsConfig.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/traxxsConfig.cmake
+    INSTALL_DESTINATION ${CONFIG_PACKAGE_LOCATION}
+    PATH_VARS INCLUDE_INSTALL_DIR
+)
+
+export(EXPORT traxxsTargets
+    FILE "${CMAKE_CURRENT_BINARY_DIR}/traxxsTargets.cmake"
+    NAMESPACE traxxs::
+)
+
+export(PACKAGE traxxs)
+
+install(EXPORT traxxsTargets
+    FILE traxxsTargets.cmake
+    NAMESPACE traxxs::
+    DESTINATION ${CONFIG_PACKAGE_LOCATION}
+)
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/traxxsConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/traxxsConfigVersion.cmake
+    DESTINATION ${CONFIG_PACKAGE_LOCATION}
+)
+

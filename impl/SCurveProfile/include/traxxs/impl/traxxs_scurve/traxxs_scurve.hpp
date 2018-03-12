@@ -30,24 +30,27 @@
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
-#include <SCurveProfile.hpp>
+
 #include <traxxs/arc/arc.hpp>
 #include <traxxs/crtp.hpp>
 #include <cmath>
+#include <memory>
 
 /**
  * \brief an ArcTrajGen implementation using SCurve
  */
 class ArcTrajGenSCurve : public traxxs::Cloneable< traxxs::arc::ArcTrajGen, ArcTrajGenSCurve > {
-  
+ public:
+  ArcTrajGenSCurve();
  protected: // the implementation
   virtual bool do_init() override;
   virtual bool do_compute() override;
   virtual bool do_compute_next_conditions( const traxxs::arc::ArcConditions& c_in, traxxs::arc::ArcConditions& c_out ) override;
   virtual bool do_get_conditions_at_time(double t, traxxs::arc::ArcConditions & c_out) override;
   virtual double do_get_duration() override;
-  
+ private: 
+   struct impl;
  protected:
-   SCurveProfile scurve_profile_;
+   std::shared_ptr< impl > impl_;
    double duration_ = std::nan("");
 };

@@ -16,13 +16,13 @@ target_include_directories( ${PROJECT_NAME} PUBLIC
 
 target_link_libraries( ${PROJECT_NAME} PUBLIC
   ${TRAXXS_LIB_NAME}
-  softMotion
+  PRIVATE softMotion
 )
 
-install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+install(TARGETS ${PROJECT_NAME} DESTINATION lib EXPORT traxxsTargets)
 
 install(DIRECTORY include/
-  DESTINATION ${CMAKE_INSTALL_PREFIX}/include}
+  DESTINATION ${CMAKE_INSTALL_PREFIX}/include
   FILES_MATCHING
   PATTERN "*.h"
   PATTERN "*.hpp"

@@ -19,7 +19,7 @@ set( SOURCE_FILES
 )
 set_source_files_properties(${SOURCE_FILES} PROPERTIES LANGUAGE CXX)
 
-add_library( ${LIB_NAME} ${SOURCE_FILES} )
+add_library( ${LIB_NAME} STATIC ${SOURCE_FILES} )
 
 set_target_properties(${LIB_NAME}  PROPERTIES LINKER_LANGUAGE CXX)
 
@@ -38,7 +38,6 @@ target_include_directories(${LIB_NAME} PUBLIC
 target_link_libraries( ${LIB_NAME}
     ${LIBXML2_LIBRARIES} 
 )
-
 
 ## https://rix0r.nl/blog/2015/08/13/cmake-guide/
 export(TARGETS ${LIB_NAME} FILE ${LIB_NAME}Config.cmake)

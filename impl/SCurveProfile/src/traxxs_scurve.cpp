@@ -30,13 +30,24 @@
 // The fact that you are presently reading this means that you have had
 // knowledge of the CeCILL-C license and that you accept its terms.
 
+#include <SCurveProfile.hpp>
 #include <traxxs/impl/traxxs_scurve/traxxs_scurve.hpp>
 
 #include <stdexcept>
 
+struct ArcTrajGenSCurve::impl {
+  SCurveProfile scurve_profile_;
+};
+
+ArcTrajGenSCurve::ArcTrajGenSCurve() : Cloneable< traxxs::arc::ArcTrajGen, ArcTrajGenSCurve >(), impl_( new impl )
+{
+}
+
+
 bool ArcTrajGenSCurve::do_init()
 {
-  this->scurve_profile_ = SCurveProfile();
+  this->impl_->scurve_profile_ = SCurveProfile();
+  return true;
 }
 
 bool ArcTrajGenSCurve::do_compute()
@@ -46,27 +57,27 @@ bool ArcTrajGenSCurve::do_compute()
    */
   if ( std::isnan( this->dt_ ) )
     return false; // the s-curve algorithm needs a period
-  this->scurve_profile_.set_period( this->dt_ );
+  this->impl_->scurve_profile_.set_period( this->dt_ );
   this->c_profile_.clear();
   this->duration_ = std::nan("");
   
-  this->scurve_profile_.config(
+  this->impl_->scurve_profile_.config(
     this->c_i_.s, this->c_i_.ds, this->c_i_.dds, 
     this->c_f_.s, this->c_f_.ds, this->c_f_.dds, 
     this->c_max_.ds, this->c_max_.dds, this->c_max_.j );
   
-  this->scurve_profile_.compute_curves();
+  this->impl_->scurve_profile_.compute_curves();
   
-  this->duration_ = this->scurve_profile_.t_vect_[this->scurve_profile_.t_vect_.size()-1];
+  this->duration_ = this->impl_->scurve_profile_.t_vect_[this->impl_->scurve_profile_.t_vect_.size()-1];
   
   traxxs::arc::ArcConditions c_tmp;
-  this->c_profile_.resize( this->scurve_profile_.t_vect_.size() ) ;
-  for ( int i=0 ; i<this->scurve_profile_.t_vect_.size() ; i++ ) {
-    c_tmp.s   = this->scurve_profile_.s_vect_[i];
-    c_tmp.ds  = this->scurve_profile_.v_vect_[i];
-    c_tmp.dds = this->scurve_profile_.a_vect_[i];
-    c_tmp.j   = this->scurve_profile_.j_vect_[i];
-    c_tmp.t   = this->scurve_profile_.t_vect_[i];
+  this->c_profile_.resize( this->impl_->scurve_profile_.t_vect_.size() ) ;
+  for ( int i=0 ; i<this->impl_->scurve_profile_.t_vect_.size() ; i++ ) {
+    c_tmp.s   = this->impl_->scurve_profile_.s_vect_[i];
+    c_tmp.ds  = this->impl_->scurve_profile_.v_vect_[i];
+    c_tmp.dds = this->impl_->scurve_profile_.a_vect_[i];
+    c_tmp.j   = this->impl_->scurve_profile_.j_vect_[i];
+    c_tmp.t   = this->impl_->scurve_profile_.t_vect_[i];
     this->c_profile_[i] = c_tmp;
   }
   return true;
