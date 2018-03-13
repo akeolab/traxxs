@@ -8,7 +8,7 @@ set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/)
 
 option(BUILD_DOC "Build documentation" ON)
 option( USE_TG_SOFTMOTION "use softmotion trajectory generator" ON )
-option( USE_TG_SCURVETRAJGEN "use scurve_traj_gen trajectory generator" ON )
+option( USE_TG_SCURVETRAJGEN "use scurve_traj_gen trajectory generator" OFF )
 
 option( BUILD_SAMPLES "build samples" ON )
 

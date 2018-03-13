@@ -12,7 +12,7 @@ Three motivations behing this framework:
 
 Five main objects are defined within this framework:
 
-* `traxxs::path::PathSegment` : a path segment, defining a mapping between arc coordinates (any 1D parameterization of a path) and "real" coordinates
+* `traxxs::path::PathSegment` : a path segment, defining a mapping between arc coordinates (any 1D parameterization of a path) and "real" ("path") coordinates
 * `traxxs::path::Path`: a complete path, i.e. a consistent (continuous) list of path segments
 * `traxxs::arc::ArcTrajGen`: a 1D trajectory generator. Multiple implementations can be added. Is used to define trajectory on arc coordinates.
 * `traxxs::trajectory::Trajectory`: an object coupling a Path to an ArcTrajGen
@@ -50,15 +50,25 @@ mkdir build && cd build
 # build it
 cmake ..
 make
-# install
-sudo make install
+# install it, optionally
+# sudo make install
 ```
 
 ### Build options
 
 * `USE_TG_SOFTMOTION`, defaults to `ON` : whether or not to use the softmotion implementation
-* `USE_TG_SCURVETRAJGEN`, defaults to `ON` : whether or not to use the scurve_traj_gen implementation
+* `USE_TG_SCURVETRAJGEN`, defaults to `OFF` : whether or not to use the scurve_traj_gen implementation (SCurve is not mature yet at the time of writing)
 * `BUILD_SAMPLES`, defaults to `ON` : whether or not to build the samples
+
+## Use it in your project
+```cmake
+find_package(traxxs REQUIRED)
+add_executable(foo main.cpp)
+# example using the softMotion trajectory generator implementation
+target_link_libraries(foo traxxs::traxxs traxxs::traxxs_softmotion)
+# # example using the SCurve trajectory generator implementation
+# target_link_libraries(foo traxxs::traxxs traxxs::traxxs_scurve)
+```
 
 ## Use the examples
 
