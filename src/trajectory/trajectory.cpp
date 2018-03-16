@@ -159,7 +159,7 @@ bool traxxs::trajectory::Trajectory::getSegmentIndex( double time, int& idx_out,
     if ( !traj->isComputed() )
       ret &= traj->compute();
     if ( !ret ) {
-      std::cerr << "Failed at " << iseg << std::endl;
+      std::cerr << "traxxs::trajectory::Trajectory::getSegmentIndex Failed at " << iseg << std::endl;
       return ret;
     }
     if ( time_on_segment <= traj->getDuration() ) {

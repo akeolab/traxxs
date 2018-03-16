@@ -76,7 +76,10 @@ int main(void) {
   double dt = 0.0001;
   double t = 0 - dt;
   // set the system initial state and store it into 'state'
-  trajectory->getState( 0.0, state);
+  if ( !trajectory->getState( 0.0, state) ) {
+    std::cerr << "Could not get state !\n";
+    return 1;
+  }
   state.x[0] += 1.0; // add some offset to initial state
   
   std::cout << "{" << std::endl;

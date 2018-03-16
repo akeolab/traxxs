@@ -37,6 +37,12 @@ bool traxxs::path::Path::init()
   arc::ArcConditions arc_cond_start, arc_cond_end;
   for ( auto& seg : segments_ ) {
     
+    if ( !seg->isInitialized() ) {
+      if ( !seg->init() ) {
+        std::cerr << "traxxs::path::Path::init failed to initialize segment" << std::endl;
+        return false;
+      }
+    }
     /** \todo check for NaNs in path_bounds -> NaNs would mess with all following computations */
     path_bounds = seg->getPathBounds();
     arc_cond_start = seg->getStartArcConditions();

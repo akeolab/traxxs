@@ -202,7 +202,10 @@ class PathSegment
     i_cond_start_ = start, i_cond_end_ = end, i_path_bounds_ = bounds;
   }
   
-  virtual bool init(); 
+  virtual bool init() final {
+    this->is_init_ = this->do_init();
+    return this->isInitialized();
+  }
    
   virtual Eigen::VectorXd getPosition( const arc::ArcConditions& arc_conditions ) const {
     return this->getConfiguration( arc_conditions.s );
@@ -231,10 +234,14 @@ class PathSegment
   virtual bool setEndArcConditions( const arc::ArcConditions& end_arc_conditions ) { return this->cond_end_.setArcConditions( end_arc_conditions ); }
   virtual bool setArcBounds( const arc::ArcConditions& arc_bounds ) { this->arc_bounds_ = arc_bounds; return true; }
   virtual bool setPathBounds( const path::PathBounds& path_bounds ) { this->path_bounds_ = path_bounds; return true; }
+  
+ public:
+  virtual bool isInitialized() const final { return this->is_init_; };
  
  protected: // the virtual implementation
   /** \brief implementation of getLength() */
   virtual double do_get_length() const { return this->length_; }
+  virtual bool do_init();
   
  protected: // the pure virtual implementation
   /** \brief implementation of getDerivative() */
@@ -248,6 +255,7 @@ class PathSegment
   PathBounds path_bounds_ ;
   arc::ArcConditions arc_bounds_;
   double length_ = std::nan("");
+  bool is_init_ = false;
   
  protected:
   PathWaypoint i_cond_start_, i_cond_end_; 
@@ -276,11 +284,11 @@ class BlendSegment : public PathSegment
   virtual BlendSegment* clone() const override = 0;
   
  public: 
-  virtual bool init() override {
+  virtual bool do_init() override {
     // store the effective start/end conditions 
     this->cond_start_.x = this->getConfiguration(0.0);
     this->cond_end_.x = this->getConfiguration( this->getLength() );
-    return ( true && PathSegment::init() );
+    return ( true && PathSegment::do_init() );
   }
 };
 
@@ -302,7 +310,7 @@ class StackedSegments : public Cloneable< PathSegment, StackedSegments >
   void setSegments( const std::vector< std::shared_ptr< PathSegment > >& segments ) { this->segments_ = segments; }
   
  public:
-  virtual bool init() override;
+  virtual bool do_init() override;
   
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
@@ -322,7 +330,7 @@ class LinearSegment : public Cloneable< PathSegment, LinearSegment >
   LinearSegment( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds );
   
  public:
-  virtual bool init() override;
+  virtual bool do_init() override;
   
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
@@ -343,7 +351,7 @@ class SmoothStep7 : public Cloneable< PathSegment, SmoothStep7 >
   SmoothStep7( const PathWaypoint& start, const PathWaypoint& end, const PathBounds& bounds );
   
  public:
-  virtual bool init() override;
+  virtual bool do_init() override;
   
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
@@ -377,7 +385,7 @@ class CircularBlend : public Cloneable< BlendSegment< double >, CircularBlend >
                  double maxDeviation);
   
  public:
-  virtual bool init() override;
+  virtual bool do_init() override;
   
  protected: // the interface implementation
   virtual Eigen::VectorXd do_get_derivative( unsigned int order, double s ) const override;
@@ -418,7 +426,7 @@ class CartesianSegmentBase : public Cloneable< StackedSegments, CartesianSegment
  public:
   virtual bool set( std::shared_ptr< PathSegment > segment_position, std::shared_ptr< PathSegment > segment_orientation, 
                         const Pose& start, const Pose& end );
-  virtual bool init() override;
+  virtual bool do_init() override;
                         
  public: // the interface implementation
   /** \brief returns the position in 7d-vector form, see traxxs::path::Pose::toVector() */
@@ -461,7 +469,7 @@ class CartesianSegment : public Cloneable< CartesianSegmentBase, CartesianSegmen
   }
   
  public:
-  virtual bool init() override {
+  virtual bool do_init() override {
     bool ret = true;
     
     // first build the segments for position and orientation
@@ -478,7 +486,7 @@ class CartesianSegment : public Cloneable< CartesianSegmentBase, CartesianSegmen
     
     // now do the rest of the setup
     ret &= CartesianSegmentBase::set( this->segment_pos_, this->segment_or_, start_.x, end_.x );
-    ret &= CartesianSegmentBase::init();
+    ret &= CartesianSegmentBase::do_init();
     
     return ret;
   }

@@ -48,7 +48,7 @@ Eigen::VectorXd traxxs::path::stack( const Eigen::VectorXd& vec_top, const Eigen
   return vstack;
 }
 
-bool traxxs::path::PathSegment::init()
+bool traxxs::path::PathSegment::do_init()
 {
   if ( path_bounds_.dx.size() <= 0 || path_bounds_.ddx.size() <= 0 || path_bounds_.j.size() <= 0 )
     throw std::invalid_argument( "Bounds should have been initialized with correct size in PathSegment." );
@@ -75,8 +75,6 @@ bool traxxs::path::PathSegment::init()
   cond_start_.setArcConditions( arcconds_start );
   cond_end_.setArcConditions( arcconds_end );
   
-  
-  
   return true;
 }
 
@@ -89,9 +87,9 @@ traxxs::path::StackedSegments::StackedSegments( std::shared_ptr< PathSegment >& 
     : StackedSegments( std::vector<std::shared_ptr<PathSegment> >{segment_top, segment_bottom} )
 {}
 
-bool traxxs::path::StackedSegments::init()
+bool traxxs::path::StackedSegments::do_init()
 {
-  // we do not call PathSegment::init() on purpose, since StackedSegments is a wrapper
+  // we do not call PathSegment::do_init() on purpose, since StackedSegments is a wrapper
   this->length_ = 1.0; // unit arc variable used for StackedSegments
   
   this->path_bounds_ = PathBounds(0); // reset to zero
@@ -99,7 +97,7 @@ bool traxxs::path::StackedSegments::init()
   // we have to reconstruct the path_bounds
   bool ret = true;
   for ( const auto& seg : segments_ ) {
-    ret &= seg->init();
+    ret &= seg->init(); /** \todo should we check if already initialized ? Here we force it no matter what. Probably safer */
     this->path_bounds_.dx = stack( this->path_bounds_.dx, seg->getPathBounds().dx );
     this->path_bounds_.ddx = stack( this->path_bounds_.ddx, seg->getPathBounds().ddx );
     this->path_bounds_.j = stack( this->path_bounds_.j, seg->getPathBounds().j );
@@ -170,10 +168,10 @@ traxxs::path::LinearSegment::LinearSegment( const PathWaypoint& start, const Pat
     : Cloneable< PathSegment, LinearSegment >( start, end, bounds )
 {}
 
-bool traxxs::path::LinearSegment::init()
+bool traxxs::path::LinearSegment::do_init()
 {
   this->length_ = (cond_end_.x - cond_start_.x).norm();
-  bool ret = PathSegment::init();
+  bool ret = PathSegment::do_init();
   return ret;
 }
 
@@ -234,10 +232,10 @@ traxxs::path::SmoothStep7::SmoothStep7( const PathWaypoint& start, const PathWay
     : Cloneable< PathSegment, SmoothStep7 >( start, end, bounds )
 {}
 
-bool traxxs::path::SmoothStep7::init() 
+bool traxxs::path::SmoothStep7::do_init() 
 {
   this->length_ = 1.0; // unit parameter for SmoothStep7
-  return PathSegment::init();
+  return PathSegment::do_init();
 }
 
 Eigen::VectorXd traxxs::path::SmoothStep7::do_get_derivative( unsigned int order, double s ) const
@@ -327,7 +325,7 @@ traxxs::path::CircularBlend::CircularBlend( const PathWaypoint& start, const Pat
       i_waypoint_( waypoint ), i_max_deviation_( maxDeviation )
 {}
 
-bool traxxs::path::CircularBlend::init()
+bool traxxs::path::CircularBlend::do_init()
 {
   const Eigen::VectorXd startDirection = normalizedOrZero(i_waypoint_ - i_cond_start_.x);
   const Eigen::VectorXd endDirection = normalizedOrZero(i_cond_end_.x - i_waypoint_);
@@ -359,7 +357,7 @@ bool traxxs::path::CircularBlend::init()
     y_ = startDirection;
   }
   
-  return BlendSegment::init();
+  return BlendSegment::do_init();
 }
 
 
@@ -457,10 +455,10 @@ bool traxxs::path::CartesianSegmentBase::set( std::shared_ptr< PathSegment > seg
   return true;
 }
 
-bool traxxs::path::CartesianSegmentBase::init()
+bool traxxs::path::CartesianSegmentBase::do_init()
 {
   StackedSegments::setSegments( std::vector< std::shared_ptr< PathSegment > >{ segment_pos_, segment_or_ } );
-  StackedSegments::init();
+  StackedSegments::do_init();
   
   /** \fixme should not throw exception ( used in constructors ! ) */
   // check dimensions
