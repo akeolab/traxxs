@@ -44,15 +44,17 @@ std::vector< std::shared_ptr< path::PathSegment > > createSegmentsForCartesianTr
   //
   // we will use three Cartesian waypoints to define the path: a start, and end, and an intermediate waypoint
   //
-  path::CartesianPathWaypoint pt_start, pt_wpt, pt_end;
+  path::CartesianPathWaypoint pt_start, pt_wpt, pt_wpt2, pt_end;
   
   // set the position of the waypoints
   pt_start.x.p  << 0, 0, 0;
   pt_wpt.x.p    << 1, 0, 0;
-  pt_end.x.p    << 1, 1, 0;
+  pt_wpt2.x.p   << 1, 1, 0;
+  pt_end.x.p    << 1, 1, 1;
   // set the orientation of the waypoints
   pt_start.x.q  = Eigen::Quaterniond( 1, 0, 0, 0 ); // w, x, y , z
   pt_wpt.x.q    = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
+  pt_wpt2.x.q   = Eigen::Quaterniond( 0, 1, 0, 0 ); // w, x, y , z
   pt_end.x.q    = Eigen::Quaterniond( 0, 0, 1, 0 ); // w, x, y , z
   
   //
@@ -80,7 +82,7 @@ std::vector< std::shared_ptr< path::PathSegment > > createSegmentsForCartesianTr
   using BlendSegment_t    = path::CartesianSegment< path::CircularBlend, path::SmoothStep7 >;
   
   // we use an helper function to create the segments w.r.t. the waypoints and the segment types we defined.
-  std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_end};
+  std::vector< path::CartesianPathWaypoint > waypoints = { pt_start, pt_wpt, pt_wpt2, pt_end};
   auto segments = path::blendedSegmentsFromWaypoints< path::CartesianPathWaypoint, JoiningSegment_t, BlendSegment_t, double>( 
    path_bounds, waypoints, 0.1 ); // std::vector< sptr< path::PathSegment > >
   

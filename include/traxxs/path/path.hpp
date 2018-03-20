@@ -123,7 +123,7 @@ class Path
  public:
   Path( std::vector< std::shared_ptr < PathSegment > > segments );
  public:
-  virtual bool init();
+  virtual bool init( int i_start = -1 );
   virtual const std::vector< std::shared_ptr < PathSegment > >& getSegments() const { return this->segments_; };
  protected: 
   std::vector< std::shared_ptr < PathSegment > > segments_;

@@ -88,26 +88,47 @@ bool traxxs::trajectory::Trajectory::setPathBounds(double time, const path::Path
   new_path->setStartArcConditions( middle );
   new_path->setEndArcConditions( end );
   path->setEndArcConditions( middle );
+
   for ( unsigned int iseg = seg_idx+1; iseg < this->path_->getSegments().size(); ++iseg ) 
-    this->trajsegments_[seg_idx]->getPathSegment()->setPathBounds( path_bounds );
+    this->trajsegments_[iseg]->getPathSegment()->setPathBounds( path_bounds );
   // insert the new segment
   this->trajsegments_.insert( this->trajsegments_.begin() + seg_idx+1, std::make_shared< TrajectorySegment >( new_path, new_traj ) );
-  
   // then rebuild the path
   std::vector< std::shared_ptr< path::PathSegment > > segments(this->trajsegments_.size());
   for ( unsigned int iseg = 0; iseg < this->trajsegments_.size(); ++iseg )
     segments.at( iseg ) = this->trajsegments_[iseg]->getPathSegment();
   this->path_ = std::make_shared< path::Path >( segments );
   /** \todo path_ should be reconstructed on-the-fly, i.e. (sliding) pair (of segments) by pair. */
-  if ( !this->path_->init() )
+  /** \warning when reconstructing the path, the problem might arise that the new path bounds were not respected at this time. 
+   * Hence when we reconstruct, this imposes new (over)constraints at the split.
+   * Therefore, we final conditions for the first part of the split are constrained by the bounds on the second split.
+   * As a consequence, the first part of the split (i.e., potentially the past) may take longer than what really happened until time 'time'
+   * We must ignore this "new" duration of the past split segment.
+   * The problem is: how can we know if the past split is effectively in the past ?
+   * 
+   * Illustration: 
+   * at t = tx, I'm on segment 0 at s=0.5, ds = 1.0
+   * I split at ts > tx, imposing ds_max = 0.5 from the split on
+   * Potentially, I can have that at t = tx (the same), I now have s = 0.25 ! (because of continuity constraint at the split)
+   * This leads to discontinuities in the trajectory.
+   * The problem is that we cannot guarantee that we can find somewhere on segment 0 to match the conditions we were (s=0.5, ds = 1.0)
+   * 
+   * Conclusion: we reinit the path solely starting at iseg + 1
+   */
+  if ( !this->path_->init( seg_idx + 1 ) )
     return false;
   
   // and reset the trajs
-  /** \note we start at iseg since changes in the path normally occur solely starting at iseg+1 (and might reverberate up to iseg and no more)  */
-  for ( unsigned int iseg = seg_idx; iseg < this->path_->getSegments().size(); ++iseg ) {
+  /** \note we start at iseg+1 since changes in the path are expected to occur solely starting at iseg+1 
+   * \warning might reverberate up to iseg (and no more) but we ignore this cf. remark above
+   */
+  for ( unsigned int iseg = seg_idx+1; iseg < this->path_->getSegments().size(); ++iseg ) {
     traj = this->trajsegments_[iseg]->getArcTrajGen();
     /** \fixme at this point, we just want to state that the ArcTrajGens should be recomputed. Using ArcTrajGen::init() is probably overkill */
     traj->init();
+    if ( iseg > seg_idx+1 ) // we do not want to change the initial conditions for iseg+1 since the final conditions for iseg have been ignore
+      traj->setInitialConditions( this->path_->getSegments()[iseg]->getStartArcConditions() );
+    traj->setFinalConditions( this->path_->getSegments()[iseg]->getEndArcConditions() );
     traj->setMaxConditions( this->path_->getSegments()[iseg]->getArcBounds() );
   }
   return ret;
@@ -198,6 +219,7 @@ bool traxxs::trajectory::Trajectory::computeAll( bool force /*= false*/ )
 
 bool traxxs::trajectory::Trajectory::computeAtIndex( unsigned int idx, bool force /*= false*/ )
 {
+  std::cerr << "\tComputing: " << idx << std::endl;
   if ( idx >= this->path_->getSegments().size() )
     return false;
   if ( force || !this->trajsegments_[idx]->getArcTrajGen()->isComputed() )

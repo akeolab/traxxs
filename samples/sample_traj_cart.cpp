@@ -68,6 +68,7 @@ int main(void) {
   
   int seg_idx;
   bool is_beyond;
+  double time_on_traj;
   trajectory::TrajectoryState state;
   arc::ArcConditions conds;
   std::shared_ptr< path::PathSegment > seg;
@@ -79,7 +80,7 @@ int main(void) {
   std::cout << "\"data\": [" << std::endl;
   
   // now explore the trajectory
-  for ( double t = 0; t < 1000.0; t+=0.0001 ) {
+  for ( double t = 0; t < 1000.0; t+=0.01 ) {
     stopwatch.start();
     
     // get the arc conditions at that time
@@ -92,13 +93,17 @@ int main(void) {
     
     // at some point in time, we decide to change the path bounds
     static bool has_updated_bounds = false;
-    if ( t > 1.5 && !has_updated_bounds ) {
+    if ( t > 0.5 && !has_updated_bounds ) {
+      std::cerr << "Setting new path bounds at time " << t << "\n";
       // define new path bounds
       path::PathBounds4d new_path_bounds = path_bounds;
       //   new_path_bounds.dx << 1.0, 1.0, 1.0, 10.0;
-      new_path_bounds.dx << 0.5, 0.5, 0.5, 2.0;
+      new_path_bounds.dx << 0.25, 0.25, 0.25, 10.0;
       // set them on the trajectory, starting at time t
-      trajectory->setPathBounds( t, new_path_bounds );
+      if ( !trajectory->setPathBounds( t, new_path_bounds ) ) {
+        std::cerr << "Failed to set new path bounds to trajectory at time " << t << "\n";
+        return 1;
+      }
       // store the fact that we performed the update
       has_updated_bounds = true;
     }

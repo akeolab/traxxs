@@ -29,14 +29,15 @@ traxxs::path::Path::Path( std::vector< std::shared_ptr < PathSegment > > segment
   
 }
 
-bool traxxs::path::Path::init()
+bool traxxs::path::Path::init(  int i_start /*= -1*/  )
 {
   // first update the segments arc bounds and start/end arc conditions
   PathBounds path_bounds;
   arc::ArcConditions arc_bounds;
   arc::ArcConditions arc_cond_start, arc_cond_end;
-  for ( auto& seg : segments_ ) {
-    
+  std::shared_ptr < PathSegment > seg;
+  for ( unsigned int iseg = std::max(i_start,0); iseg < this->segments_.size(); ++iseg ) {
+    seg = this->segments_[iseg];
     if ( !seg->isInitialized() ) {
       if ( !seg->init() ) {
         std::cerr << "traxxs::path::Path::init failed to initialize segment" << std::endl;
@@ -231,7 +232,7 @@ bool traxxs::path::Path::init()
   arc::ArcConditions arc_cond_end_prev;
   Eigen::VectorXd fp, fpp, fppp;
   Eigen::VectorXd fp_prev, fpp_prev, fppp_prev;
-  for ( unsigned int iseg = 0; iseg < this->segments_.size(); ++iseg ) {
+  for ( unsigned int iseg = i_start+1; iseg < this->segments_.size(); ++iseg ) {
     cur = this->segments_[iseg];
     prev = nullptr;
     if ( iseg > 0 ) 

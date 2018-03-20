@@ -4,6 +4,7 @@ import json
 
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 
 def existsOR( data, keys ):
   ret = False
@@ -100,6 +101,15 @@ if kIsCartesian:
       axarr[ax_i+1, ax_j].set_title( "angular " + name )
       axarr[ax_i+1, ax_j].legend()
       ax_j += 1
+    
+    # 3D plot
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot( sub( data['x'], 0 ), sub( data['x'], 1 ), sub( data['x'], 2 ) )
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.set_title('3D position')
 
 else: # NOT cartesian
   suffixes = []
