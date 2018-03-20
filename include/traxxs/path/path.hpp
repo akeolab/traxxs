@@ -38,7 +38,10 @@
 namespace traxxs {
 namespace path {
   
-/** \brief enforces rules on start/end waypoints for blend segments */
+/** 
+ * \brief enforces rules on start/end waypoints for blend segments 
+ * i.e. for CartesianPathWaypoint, on a blend related to a waypoint, the start and end of the blend have the same orientation of the source waypoint.
+ */
 void blendStartEndFromWaypoints( CartesianPathWaypoint& wpt_start, CartesianPathWaypoint& wpt_end, CartesianPathWaypoint& wpt );
 
 /** \brief enforces rules on start/end waypoints for blend segments */
@@ -56,6 +59,58 @@ std::shared_ptr < PathSegment > createBlendSegmentPositionOnly( const PathBounds
   return std::make_shared< BlendSegment_t >(
       start, end, path_bounds, wpt.x, args... );
 }  
+
+/**
+ * \brief joins blend segments with Segment_t segments 
+ * Will append 
+ * [
+ *  {start, blend1.start}, {blend1}, 
+ *  {blend1.end, blend2.start}, {blend2}, {blend2.start, ...}, ..., 
+ *  {blendN}, {blendN.end, end}
+ * ]
+ * 
+ * \param[in]   path_bounds   the bounds on the joining segments
+ * \param[in]   wpt_start     the start of the join
+ * \param[in]   wpt_end       the end of the join
+ * \param[in]   blends        the blends to be joined
+ * \param[out]  segments_out  the vector of segments to append the new list to.
+ */
+template < class Waypoint_t, class Segment_t >
+bool joinBlendSegments( const PathBounds& path_bounds, const Waypoint_t& wpt_start, const Waypoint_t& wpt_end, const std::vector< std::shared_ptr < PathSegment > >& blends, std::vector< std::shared_ptr < PathSegment > >& segments_out ) {
+  Waypoint_t start, end;
+  arc::ArcConditions tmp;
+  
+  for ( unsigned int iblend = 0; iblend < blends.size(); ++iblend ) {
+    std::shared_ptr < PathSegment > blend = blends[iblend];
+    if ( iblend == 0 )
+      start = wpt_start; // if first blend, we have to join from the first waypoint
+    
+    tmp.s = 0.0; // the end of the joining segment is the start of the blend
+    end = Waypoint_t(); // reset
+    end.x = blend->getPosition( tmp ); 
+    
+    std::shared_ptr < PathSegment > seg = std::make_shared< Segment_t >(
+      start, end, path_bounds );
+    seg->init(); // blend has already been init'ed
+    segments_out.push_back( seg );
+    segments_out.push_back( blend );
+    
+    tmp.s = blend->getLength(); // the start of the NEXT joining segment is the end of the PREVIOUS blend
+    start = Waypoint_t(); // reset
+    start.x = blend->getPosition( tmp );
+    
+    // finish cleanly
+    if ( iblend == blends.size()-1 ) {
+      end = wpt_end;
+      segments_out.push_back( 
+        std::make_shared< Segment_t >(
+          start, end, path_bounds )
+      );
+      segments_out.back()->init();
+    }
+  }
+  return true;
+}
 
 template < class Waypoint_t, class Segment_t, class BlendSegment_t, typename... Args >
 std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromWaypoints( const PathBounds& path_bounds, const std::vector< Waypoint_t >& waypoints, Args... args ) {
@@ -76,37 +131,7 @@ std::vector< std::shared_ptr < PathSegment > > blendedSegmentsFromWaypoints( con
     blends.push_back( seg );
   }
   
-  // now join all blend segments with Segment_t 
-  arc::ArcConditions tmp;
-  for ( unsigned int iblend = 0; iblend < blends.size(); ++iblend ) {
-    std::shared_ptr < PathSegment > blend = blends[iblend];
-    if ( iblend == 0 )
-      start = waypoints[0]; // if first blend, we have to join from the first waypoint
-    
-    tmp.s = 0.0; // the end of the joining segment is the start of the blend
-    end = Waypoint_t(); // reset
-    end.x = blend->getPosition( tmp ); 
-    
-    std::shared_ptr < PathSegment > seg = std::make_shared< Segment_t >(
-      start, end, path_bounds );
-    seg->init(); // blend has already been init'ed
-    segments.push_back( seg );
-    segments.push_back( blend );
-    
-    tmp.s = blend->getLength(); // the start of the NEXT joining segment is the end of the PREVIOUS blend
-    start = Waypoint_t(); // reset
-    start.x = blend->getPosition( tmp );
-    
-    // finish cleanly
-    if ( iblend == blends.size()-1 ) {
-      end = waypoints[waypoints.size()-1];
-      segments.push_back( 
-        std::make_shared< Segment_t >(
-          start, end, path_bounds )
-      );
-      segments.back()->init();
-    }
-  }
+  joinBlendSegments< Waypoint_t, Segment_t >( path_bounds, waypoints[0], waypoints[waypoints.size()-1], blends, segments );
   
   return segments;
 }
