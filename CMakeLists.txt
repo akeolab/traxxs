@@ -6,11 +6,25 @@ set( TRAXXS_LIB_NAME traxxs )
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -fPIC")
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/)
 
-option(BUILD_DOC "Build documentation" ON)
+option( BUILD_DOC "Build documentation" OFF)
 option( USE_TG_SOFTMOTION "use softmotion trajectory generator" ON )
 option( USE_TG_SCURVETRAJGEN "use scurve_traj_gen trajectory generator" OFF )
 
 option( BUILD_SAMPLES "build samples" ON )
+
+#################### Catkin ###########################
+find_package(catkin QUIET)
+if(catkin_FOUND)
+    catkin_package(
+        INCLUDE_DIRS include/
+        external/soft_motion/soft-motion-libs/src/
+        external/scurve_traj_gen/scurve_traj_gen/src/
+        impl/softMotion/include/
+        impl/SCurveProfile/include/
+        LIBRARIES ${TRAXXS_LIB_NAME} traxxs_softmotion
+    )
+endif()
+#######################################################
 
 add_subdirectory( external )
 add_subdirectory( src )
@@ -81,4 +95,3 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/traxxsConfigVersion.cmake
     DESTINATION ${CONFIG_PACKAGE_LOCATION}
 )
-
